@@ -163,7 +163,12 @@ input{font-family:inherit}
 /* ════════════════════════════════════════════════════════════════════
    MAIN SCREEN (Quiz + Calibration share this layout)
    ════════════════════════════════════════════════════════════════════ */
-#screen-main{height:100vh;overflow:hidden}
+#screen-main{
+  height:100vh;
+  height:100dvh;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
 
 /* ── Top bar ── */
 .top-bar{
@@ -263,7 +268,6 @@ input{font-family:inherit}
 .bottom-panel{
   flex:0 0 auto;background:#0a1520;
   border-top:1px solid #1e2d3d;
-  overflow-y:auto;
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -599,3 +603,127 @@ input{font-family:inherit}
 /* ── Utility ── */
 .hidden{display:none!important}
 .text-muted{color:#7f8c8d}
+
+/* ════════════════════════════════════════════════════════════════════
+   RESPONSIVE DESIGN (MOBILE & TABLET OPTIMIZATION)
+   ════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Dynamic viewport height */
+  .screen {
+    height: 100vh;
+    height: 100dvh;
+  }
+  
+  #screen-main {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+
+  /* Compact Top Bar on mobile */
+  .top-bar {
+    padding: 4px 8px;
+    min-height: 40px;
+    gap: 6px;
+  }
+  .tbar-progress {
+    font-size: 13px;
+  }
+  .tbar-score {
+    gap: 8px;
+    font-size: 13px;
+  }
+  .btn-icon {
+    font-size: 18px;
+    padding: 3px 6px;
+  }
+
+  /* Compact Question Prompt */
+  .question-prompt {
+    padding: 8px 12px 6px;
+  }
+  .q-hint {
+    font-size: 10px;
+    margin-bottom: 2px;
+  }
+  .q-name {
+    font-size: 20px;
+  }
+  .q-cat {
+    font-size: 11px;
+    margin-top: 2px;
+  }
+
+  /* Controlled Map Height in Portrait: Map is prominent, but choices & feedback always fit! */
+  .map-container {
+    flex: 0 0 auto !important;
+    width: 100%;
+    height: 38vh !important;
+    min-height: 180px !important;
+    max-height: 270px !important;
+  }
+
+  /* Choices Panel fits neatly */
+  .choices-wrap {
+    padding: 8px 12px 14px;
+  }
+  .choices-hint {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  .choices-grid {
+    gap: 8px;
+  }
+  .choice-btn {
+    padding: 12px 8px;
+    font-size: 13.5px;
+    border-radius: 10px;
+    min-height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Feedback Panel wraps and fits cleanly */
+  .feedback-panel {
+    padding: 10px 14px 16px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .fb-icon {
+    font-size: 26px;
+  }
+  .fb-result {
+    font-size: 15px;
+  }
+  .fb-name {
+    font-size: 13px;
+  }
+  .fb-continue {
+    padding: 10px 18px;
+    font-size: 14px;
+    margin-left: auto;
+  }
+  .fb-item-note, .fb-mnemonic-box {
+    font-size: 11.5px;
+    padding: 6px 9px;
+    line-height: 1.35;
+  }
+
+  .explore-bottom-card {
+    padding: 10px 14px 16px;
+  }
+  .explore-name {
+    font-size: 17px;
+  }
+  .explore-item-note, .explore-mnemonic-box {
+    font-size: 11.5px;
+    padding: 6px 9px;
+  }
+
+  /* Bottom spacing for phone home indicators */
+  .bottom-panel {
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+}
+

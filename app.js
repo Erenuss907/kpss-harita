@@ -290,6 +290,7 @@ function switchMapImage(kategori) {
 }
 
 window.addEventListener('resize', () => resizeMapStage());
+window.addEventListener('orientationchange', () => setTimeout(resizeMapStage, 120));
 
 // ─────────────────────────────────────────────────────────────────────────
 //  COORDINATE CONVERSION  (stage-percentage ↔ screen)
