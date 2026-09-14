@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>🗺 Türkiye Ezber</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#1e293b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     MENU SCREEN
+════════════════════════════════════════════ -->
+<div id="screen-menu" class="screen active">
+  <div class="menu-header">
+    <div class="menu-top-tools">
+      <button id="menu-sound-btn" class="tool-icon-btn" title="Ses Aç/Kapat">🔊</button>
+      <button id="menu-badges-btn" class="tool-icon-btn" title="Başarılar & Rozetler">🏆</button>
+      <button id="menu-mnemonics-btn" class="tool-icon-btn" title="Hafıza Şifreleri">💡</button>
+    </div>
+    <div class="menu-logo">🗺️</div>
+    <h1>Türkiye Ezber</h1>
+    <p class="menu-subtitle">Dağlar &amp; Göller — Harita Quizi</p>
+    
+    <div class="mastery-banner">
+      <div class="mastery-banner-header">
+        <span>🏆 Genel İlerleme & Ustalık</span>
+        <strong id="menu-mastery-text">%0</strong>
+      </div>
+      <div class="mastery-progress-track">
+        <div id="menu-mastery-fill" class="mastery-progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+  <div class="menu-body">
+    <section class="menu-section">
+      <h3>Konu</h3>
+      <div class="btn-group">
+        <button class="mode-btn active" data-mode="mountains">⛰️ Dağlar</button>
+        <button class="mode-btn"        data-mode="lakes">💧 Göller</button>
+        <button class="mode-btn"        data-mode="mixed">🌍 Karışık</button>
+      </div>
+    </section>
+    <section class="menu-section">
+      <h3>Kategori <span id="item-count" class="item-count"></span></h3>
+      <div id="category-container" class="category-container"></div>
+    </section>
+    <section class="menu-section">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <h3>Soru Tipi</h3>
+        <button id="timer-toggle-btn" class="timer-toggle-btn" title="Soru başına 15 saniye">⏱️ Süreye Karşı: <b>KAPALI</b></button>
+      </div>
+      <div class="btn-group">
+        <button class="qtype-btn"        data-qtype="name-to-loc">📍 İsimden Konuma</button>
+        <button class="qtype-btn"        data-qtype="loc-to-name">🔤 Konumdan İsme</button>
+        <button class="qtype-btn active" data-qtype="mixed">🎲 Karışık</button>
+      </div>
+    </section>
+    <div class="main-action-buttons">
+      <button id="start-btn" class="btn btn-primary btn-xl">▶ Pratiğe Başla</button>
+      <button id="explore-btn" class="btn btn-secondary btn-xl">🗺️ Haritayı İncele</button>
+    </div>
+    <div class="secondary-action-buttons">
+      <button id="flashcard-btn" class="btn btn-success btn-lg hidden">🃏 Bilgi Kartları</button>
+      <button id="mistakes-btn" class="btn btn-danger-outline btn-lg hidden">🎯 Yanıldıklarımı Sor (<span id="mistakes-badge">0</span>)</button>
+    </div>
+    <div class="menu-actions">
+      <button id="reset-btn" class="btn btn-danger-outline">🗑️ İlerlemeyi Sıfırla</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     FLASHCARD MODE SELECTION MODAL
+════════════════════════════════════════════ -->
+<div id="modal-fc-mode" class="modal-overlay hidden">
+  <div class="modal-card">
+    <h3>🃏 Bilgi Kartları Modu</h3>
+    <p id="modal-fc-cat-name" class="modal-subtitle">Kategori</p>
+    <div class="modal-options">
+      <button id="btn-fc-card-mode" class="modal-opt-btn">
+        <span class="opt-icon">🎴</span>
+        <div class="opt-text">
+          <strong>Kart Modu</strong>
+          <small>Dokun-çevir, Biliyordum / Tekrar Sor</small>
+        </div>
+      </button>
+      <button id="btn-fc-test-mode" class="modal-opt-btn">
+        <span class="opt-icon">📝</span>
+        <div class="opt-text">
+          <strong>Test Modu</strong>
+          <small>4 şıklı çoktan seçmeli soru-cevap</small>
+        </div>
+      </button>
+    </div>
+    <button id="btn-fc-modal-close" class="btn btn-secondary btn-sm" style="margin-top:14px;width:100%">Vazgeç</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     FLASHCARDS SCREEN (Card & Test Mode)
+════════════════════════════════════════════ -->
+<div id="screen-flashcards" class="screen">
+  <div id="fc-top-bar" class="top-bar"></div>
+
+  <div class="fc-content">
+    <!-- Card Mode UI -->
+    <div id="fc-card-mode-wrap" class="fc-mode-wrap hidden">
+      <div class="fc-card-container">
+        <div id="fc-card" class="flashcard">
+          <div class="fc-card-inner">
+            <div class="fc-front">
+              <div class="fc-badge">SORU</div>
+              <div id="fc-question-text" class="fc-q-text">Soru metni...</div>
+              <div class="fc-tap-hint">👆 Cevabı görmek için dokunun</div>
+            </div>
+            <div class="fc-back">
+              <div class="fc-badge answer">CEVAP</div>
+              <div id="fc-answer-text" class="fc-a-text">Cevap metni...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="fc-card-actions" class="fc-actions hidden">
+        <button id="fc-again-btn" class="btn btn-danger-outline fc-act-btn">🔁 Tekrar Sor</button>
+        <button id="fc-known-btn" class="btn btn-success fc-act-btn">✓ Biliyordum</button>
+      </div>
+    </div>
+
+    <!-- Test Mode UI -->
+    <div id="fc-test-mode-wrap" class="fc-mode-wrap hidden">
+      <div class="fc-test-prompt">
+        <div class="fc-badge">SORU</div>
+        <div id="fc-test-q-text" class="fc-q-text">Soru metni...</div>
+      </div>
+      <div id="fc-test-choices" class="choices-grid" style="margin-top:16px"></div>
+      <div id="fc-test-feedback" class="feedback-panel hidden" style="margin-top:16px"></div>
+    </div>
+
+    <!-- Flashcards Finish Summary -->
+    <div id="fc-finish-wrap" class="fc-finish-wrap hidden">
+      <div class="results-card" style="margin:20px auto">
+        <h2>🎉 Tebrikler!</h2>
+        <p style="color:#bdc3c7;margin-bottom:16px">Bu kategorideki tüm bilgi kartlarını tamamladınız.</p>
+        <div class="results-score-grid">
+          <div class="result-box correct">
+            <div class="result-num" id="fc-res-correct">0</div>
+            <div class="result-lbl">Doğru/Bilinen</div>
+          </div>
+          <div class="result-box wrong">
+            <div class="result-num" id="fc-res-wrong">0</div>
+            <div class="result-lbl">Tekrar Edilen</div>
+          </div>
+        </div>
+        <div class="results-actions" style="margin-top:20px">
+          <button id="fc-again-all-btn" class="btn btn-primary">↺ Tekrar Çalış</button>
+          <button id="fc-menu-btn" class="btn btn-outline">☰ Menü</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     RESULTS SCREEN
+════════════════════════════════════════════ -->
+<div id="screen-results" class="screen">
+  <div class="results-card">
+    <h2>🏁 Tur Sona Erdi</h2>
+    <div class="results-score-grid">
+      <div class="result-box correct">
+        <div class="result-num" id="res-correct">0</div>
+        <div class="result-lbl">Doğru</div>
+      </div>
+      <div class="result-box wrong">
+        <div class="result-num" id="res-wrong">0</div>
+        <div class="result-lbl">Yanlış</div>
+      </div>
+      <div class="result-box pct">
+        <div class="result-num" id="res-pct">0%</div>
+        <div class="result-lbl">Başarı</div>
+      </div>
+    </div>
+    <div id="res-worst" class="results-worst"></div>
+    <div id="res-streak-banner" class="res-streak-banner"></div>
+    <div class="results-actions">
+      <button id="res-again-btn" class="btn btn-primary">↺ Tekrar</button>
+      <button id="res-menu-btn"  class="btn btn-outline">☰ Menü</button>
+      <button id="res-badges-btn" class="btn btn-secondary">🏆 Rozetler</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MAIN SCREEN  (Quiz + Explore)
+════════════════════════════════════════════ -->
+<div id="screen-main" class="screen">
+
+  <div id="top-bar" class="top-bar"></div>
+  
+  <!-- Question Timer Bar -->
+  <div id="quiz-timer-bar" class="quiz-timer-bar hidden">
+    <div id="quiz-timer-fill" class="quiz-timer-fill"></div>
+  </div>
+
+  <div id="top-panel" class="top-panel"></div>
+
+  <!-- MAP -->
+  <div id="map-container" class="map-container">
+    <div id="map-zoom-wrapper" class="map-zoom-wrapper">
+
+      <!-- Map stage: sized and positioned exactly over the rendered image area -->
+      <div id="map-stage" class="map-stage">
+        <img id="map-bg" src="" alt="Harita" draggable="false">
+        <div id="map-pins"></div>
+        <div id="map-overlay"></div>
+      </div>
+
+      <!-- No-image placeholder (shown when category has no image) -->
+      <div id="map-no-img" class="map-no-img hidden">
+        📷 Bu kategori için henüz görsel eklenmedi.
+      </div>
+
+    </div>
+
+    <!-- Streak celebration toast -->
+    <div id="streak-toast" class="streak-toast hidden">
+      <span class="streak-toast-icon">🔥</span>
+      <div class="streak-toast-text">
+        <strong id="streak-toast-title">5'te 5!</strong>
+        <span id="streak-toast-sub">Alev aldın, harika gidiyorsun!</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="bottom-panel" class="bottom-panel"></div>
+
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL: BAŞARILAR & ROZETLER (ACHIEVEMENTS)
+════════════════════════════════════════════ -->
+<div id="modal-badges" class="modal-overlay hidden">
+  <div class="modal-card modal-card-lg">
+    <div class="modal-header-row">
+      <h3>🏆 Başarılar &amp; Rozetler</h3>
+      <button id="modal-badges-close" class="btn-icon">✕</button>
+    </div>
+    <p class="modal-subtitle">Hedefleri tamamlayarak rozetlerin kilidini açın!</p>
+    <div id="badges-list" class="badges-grid"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL: HAFIZA ŞİFRELERİ (MNEMONICS)
+════════════════════════════════════════════ -->
+<div id="modal-mnemonics" class="modal-overlay hidden">
+  <div class="modal-card modal-card-lg">
+    <div class="modal-header-row">
+      <h3>💡 KPSS Hafıza Şifreleri</h3>
+      <button id="modal-mnemonics-close" class="btn-icon">✕</button>
+    </div>
+    <p class="modal-subtitle">Dağlar ve Göller için en popüler akrostiş ve kodlamalar</p>
+    <div id="mnemonics-list" class="mnemonics-list"></div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW reg error:', err));
+    });
+  }
+</script>
+</body>
+</html>
