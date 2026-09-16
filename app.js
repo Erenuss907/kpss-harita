@@ -240,6 +240,7 @@ function openMnemonicsModal(filterCat = null) {
 //  SCREEN MANAGEMENT
 // ─────────────────────────────────────────────────────────────────────────
 function showScreen(id) {
+  hideDisambiguationBubble();
   document.querySelectorAll('.screen').forEach(s => {
     s.classList.remove('active');
     s.style.display = '';
@@ -330,7 +331,7 @@ function addPin(xPct, yPct, label, color, size=18, pulse=true, extraCls='', onCl
 
   wrap.appendChild(dot);
   if (onClick) {
-    wrap.addEventListener('click', e => { e.stopPropagation(); onClick(); });
+    wrap.addEventListener('click', e => { e.stopPropagation(); onClick(e); });
   }
 
   $('map-pins').appendChild(wrap);
@@ -342,6 +343,75 @@ function clearPins() { $('map-pins').innerHTML = ''; }
 function enableMapClick(on) {
   const ov = $('map-overlay');
   if (ov) ov.style.pointerEvents = on ? 'all' : 'none';
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  DISAMBIGUATION BUBBLE (ÇİFT / YAKIN NOKTA SEÇİMİ)
+// ─────────────────────────────────────────────────────────────────────────
+let currentBubbleEl = null;
+
+function hideDisambiguationBubble() {
+  if (currentBubbleEl) {
+    currentBubbleEl.remove();
+    currentBubbleEl = null;
+  }
+}
+
+function showDisambiguationBubble(clientX, clientY, items, onSelect) {
+  hideDisambiguationBubble();
+  const container = $('map-container');
+  if (!container || !items || items.length === 0) return;
+
+  const rect = container.getBoundingClientRect();
+  const relX = clientX - rect.left;
+  const relY = clientY - rect.top;
+
+  const bubble = el('div', 'disambiguation-bubble');
+  // If tap is too close to the top of the container, flip arrow to top
+  if (relY < 120) {
+    bubble.classList.add('arrow-up');
+  }
+
+  // Keep bubble within horizontal container bounds
+  const clampedX = Math.max(95, Math.min(rect.width - 95, relX));
+  bubble.style.left = clampedX + 'px';
+  bubble.style.top  = relY + 'px';
+
+  const header = el('div', 'bubble-header');
+  header.innerHTML = `
+    <span class="bubble-title">Hangisini Seçtiniz?</span>
+    <button class="bubble-close" title="Kapat">✕</button>
+  `;
+  header.querySelector('.bubble-close').addEventListener('click', e => {
+    e.stopPropagation();
+    hideDisambiguationBubble();
+  });
+  bubble.appendChild(header);
+
+  const optWrap = el('div', 'bubble-options');
+  items.forEach(item => {
+    const btn = el('button', 'bubble-opt-btn');
+    const color = CAT_COLOR[item.kategori] || '#38bdf8';
+    btn.innerHTML = `
+      <span class="bubble-opt-dot" style="background:${color}"></span>
+      <span>${esc(item.isim)}</span>
+    `;
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      hideDisambiguationBubble();
+      onSelect(item);
+    });
+    optWrap.appendChild(btn);
+  });
+  bubble.appendChild(optWrap);
+
+  // Prevent taps inside bubble from propagating to map
+  bubble.addEventListener('click', e => e.stopPropagation());
+  bubble.addEventListener('touchend', e => e.stopPropagation());
+
+  container.appendChild(bubble);
+  currentBubbleEl = bubble;
+  Sound.playTone(480, 0.04, 'sine', 0.08);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -593,6 +663,7 @@ function startQuiz(isMistakesMode = false) {
   S.streak       = 0;
   S.isAnswered   = false;
   S.calTarget    = null;
+  hideDisambiguationBubble();
 
   showScreen('screen-main');
   resetMapTransform();
@@ -673,6 +744,7 @@ function handleTimeOut() {
 
 function nextQuestion() {
   stopQuestionTimer();
+  hideDisambiguationBubble();
   let item = null;
   while (S.queue.length > 0) {
     const c = S.queue.shift();
@@ -795,28 +867,87 @@ function onMapClick(e) {
     setCalibrationPoint(pt.x, pt.y);
     return;
   }
+  if (S.screenMode === 'explore') {
+    handleExploreMapClick(e);
+    return;
+  }
   if (S.screenMode !== 'quiz' || S.isAnswered) return;
   if (S.currentQType !== 'name-to-loc') return;
 
   const ov = $('map-overlay');
   if (ov && ov.style.pointerEvents === 'none') return;
 
+  const pt = imgPoint(e.clientX, e.clientY);
+
+  // Active items on current map
+  const activeItemsOnMap = ALL_ITEMS.filter(i =>
+    i.kategori === S.currentItem.kategori && i.x !== null && i.y !== null
+  );
+
+  // Sort items by distance to click
+  const candidates = activeItemsOnMap.map(it => ({
+    item: it,
+    dist: Math.hypot(pt.x - it.x, pt.y - it.y)
+  })).sort((a, b) => a.dist - b.dist);
+
+  const c1 = candidates[0];
+  const c2 = candidates[1];
+
+  // If user is not zoomed in and clicks near close neighboring points (< 3.2% apart):
+  // AUTO-ZOOM in so user can distinguish and select them visually!
+  if (S.mapScale <= 1.35 && c1 && c2) {
+    const interDist = Math.hypot(c1.item.x - c2.item.x, c1.item.y - c2.item.y);
+    if (interDist <= 3.2 && c1.dist <= 6.0) {
+      const midX = (c1.item.x + c2.item.x) / 2;
+      const midY = (c1.item.y + c2.item.y) / 2;
+      zoomToLocation(midX, midY, 2.6);
+      Sound.playTone(600, 0.05, 'sine', 0.08);
+
+      $('bottom-panel').innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#1e293b;border-radius:10px;font-size:12px;color:#e2e8f0;gap:8px;">
+          <span>🔍 <b>Noktalar Çok Yakın:</b> Net seçim yapabilmeniz için harita büyütüldü. Lütfen hedefinize dokunun!</span>
+          <button id="btn-cancel-zoom" class="btn btn-secondary btn-sm" style="flex-shrink:0;">Uzaklaş</button>
+        </div>
+      `;
+      $('btn-cancel-zoom')?.addEventListener('click', () => {
+        resetMapTransform();
+        $('bottom-panel').innerHTML = `
+          <div style="padding:8px 14px;font-size:11px;color:#7f8c8d;text-align:center">
+            Tolerans ±${TOLERANCE}% &nbsp;·&nbsp; Pinch ile zoom &nbsp;·&nbsp; Çift tık = sıfırla
+          </div>`;
+      });
+      return;
+    }
+  }
+
+  // Snap to nearest candidate
+  if (c1 && c1.dist <= 6.0) {
+    evaluateNameToLocAnswer(c1.item, pt.x, pt.y);
+  } else {
+    // Click was too far from any valid point
+    evaluateNameToLocAnswer(null, pt.x, pt.y);
+  }
+}
+
+function evaluateNameToLocAnswer(chosenItem, clickX, clickY) {
+  if (S.isAnswered) return;
   stopQuestionTimer();
-  const pt   = imgPoint(e.clientX, e.clientY);
-  const dist = Math.hypot(pt.x - S.currentItem.x, pt.y - S.currentItem.y);
-  const ok   = dist <= TOLERANCE;
+  hideDisambiguationBubble();
   S.isAnswered = true;
+
+  const ok = chosenItem ? (chosenItem.id === S.currentItem.id) : false;
 
   if (ok) { Sound.playCorrect(); } else { Sound.playWrong(); }
   triggerHaptic(ok);
 
   recordAnswer(S.currentItem, ok);
-  showNameToLocFeedback(ok, S.currentItem, pt.x, pt.y);
+  showNameToLocFeedback(ok, S.currentItem, clickX, clickY, chosenItem);
 }
 
 function handleChoice(chosen) {
   if (S.isAnswered) return;
   stopQuestionTimer();
+  hideDisambiguationBubble();
   S.isAnswered = true;
   const ok = chosen.id === S.currentItem.id;
 
@@ -872,18 +1003,35 @@ function recordAnswer(item, ok) {
   renderQuizHeader();
 }
 
-function showNameToLocFeedback(ok, item, cx, cy) {
-  if (!ok) addPin(cx, cy, '✗', '#e74c3c', 18, false);
-  addPin(item.x, item.y, null, '#27ae60', 20);
-  appendFeedback(ok, item);
+function showNameToLocFeedback(ok, item, cx, cy, chosenItem = null) {
+  enableMapClick(false);
+  clearPins();
+  if (!ok) {
+    if (chosenItem) {
+      addPin(chosenItem.x, chosenItem.y, '✗', '#e74c3c', 20, false);
+    } else {
+      addPin(cx, cy, '✗', '#e74c3c', 18, false);
+    }
+  }
+  addPin(item.x, item.y, '✓', '#27ae60', 22, true);
+  appendFeedback(ok, item, false, chosenItem);
 }
 
-function appendFeedback(ok, item, isTimeout = false) {
+function appendFeedback(ok, item, isTimeout = false, chosenItem = null) {
   const color   = CAT_COLOR[item.kategori] || '#3498db';
   const catObj  = ALL_KATEGORILER.find(k => k.id === item.kategori);
   const mText   = catObj?.kodlama || '';
   const noteBox = item.not ? `<div class="fb-item-note">📌 <b>Önemli Bilgi:</b> ${esc(item.not)}</div>` : '';
   const mBox    = mText ? `<div class="fb-mnemonic-box">💡 <b>Grup Şifresi:</b> ${esc(mText)}</div>` : '';
+
+  let wrongExplain = '';
+  if (!ok && !isTimeout) {
+    if (chosenItem && chosenItem.id !== item.id) {
+      wrongExplain = `<div style="font-size:12.5px;color:#fca5a5;margin-top:2px;">📍 Siz <b>${esc(chosenItem.isim)}</b> noktasını seçtiniz. Doğru konum yeşil işaretlendi.</div>`;
+    } else {
+      wrongExplain = `<div style="font-size:12.5px;color:#fca5a5;margin-top:2px;">📍 Tıkladığınız yer hedeften uzaktı. Doğru konum yeşil işaretlendi.</div>`;
+    }
+  }
 
   const div = el('div', 'feedback-panel');
   div.innerHTML = `
@@ -891,6 +1039,7 @@ function appendFeedback(ok, item, isTimeout = false) {
     <div class="fb-body">
       <div class="fb-result ${ok?'correct':'wrong'}">${isTimeout ? 'Süre Doldu!' : (ok ? 'Doğru!' : 'Yanlış')}</div>
       <div class="fb-name" style="color:${color}">${esc(item.isim)} · ${esc(item.kategori)}</div>
+      ${wrongExplain}
       ${noteBox}
       ${mBox}
     </div>
@@ -898,6 +1047,7 @@ function appendFeedback(ok, item, isTimeout = false) {
 
   $('bottom-panel').appendChild(div);
   div.querySelector('.fb-continue').addEventListener('click', () => {
+    resetMapTransform();
     enableMapClick(false); clearPins();
     $('top-panel').innerHTML = '';
     $('bottom-panel').innerHTML = '';
@@ -969,6 +1119,7 @@ function bindResultsEvents() {
 // ─────────────────────────────────────────────────────────────────────────
 function enterExploreMode(catId = null) {
   S.screenMode = 'explore';
+  hideDisambiguationBubble();
   enableMapClick(false);
   showScreen('screen-main');
   resetMapTransform();
@@ -1002,6 +1153,7 @@ function renderExploreHeader() {
     <button class="btn-icon" id="explore-hint-btn" title="Hafıza Şifresi">💡</button>`;
 
   $('explore-back')?.addEventListener('click', () => {
+    hideDisambiguationBubble();
     clearPins(); showScreen('screen-menu'); buildMenu();
   });
   $('explore-sound-btn')?.addEventListener('click', () => Sound.toggle());
@@ -1036,6 +1188,35 @@ function renderExploreMap(catId) {
 
   if (items.length > 0 && !S.exploreSelectedId) {
     selectExploreItem(items[0], false);
+  }
+}
+
+function handleExploreMapClick(e) {
+  if (!S.exploreCat) return;
+  const pt = imgPoint(e.clientX, e.clientY);
+  const items = ALL_ITEMS.filter(i => i.kategori === S.exploreCat && i.x !== null && i.y !== null);
+  const candidates = items.map(it => ({
+    item: it,
+    dist: Math.hypot(pt.x - it.x, pt.y - it.y)
+  })).sort((a, b) => a.dist - b.dist);
+
+  const c1 = candidates[0];
+  const c2 = candidates[1];
+
+  // If unzoomed and near close points, auto-zoom
+  if (S.mapScale <= 1.35 && c1 && c2) {
+    const interDist = Math.hypot(c1.item.x - c2.item.x, c1.item.y - c2.item.y);
+    if (interDist <= 3.2 && c1.dist <= 6.0) {
+      const midX = (c1.item.x + c2.item.x) / 2;
+      const midY = (c1.item.y + c2.item.y) / 2;
+      zoomToLocation(midX, midY, 2.6);
+      Sound.playTone(600, 0.05, 'sine', 0.08);
+      return;
+    }
+  }
+
+  if (c1 && c1.dist <= 6.0) {
+    selectExploreItem(c1.item);
   }
 }
 
@@ -1157,6 +1338,22 @@ function applyMapTransform() {
   $('map-zoom-wrapper').style.transform =
     `translate(${S.mapTx}px,${S.mapTy}px) scale(${S.mapScale})`;
 }
+function zoomToLocation(xPct, yPct, targetScale = 2.6) {
+  S.mapScale = targetScale;
+  const stage = $('map-stage');
+  if (stage) {
+    const w = stage.clientWidth;
+    const h = stage.clientHeight;
+    S.mapTx = (50 - xPct) * (w / 100) * (targetScale - 0.7);
+    S.mapTy = (50 - yPct) * (h / 100) * (targetScale - 0.7);
+    const wrapper = $('map-zoom-wrapper');
+    if (wrapper) {
+      wrapper.style.transition = 'transform .28s ease-out';
+      applyMapTransform();
+      setTimeout(() => { wrapper.style.transition = ''; }, 300);
+    }
+  }
+}
 function resetMapTransform() {
   S.mapScale = 1; S.mapTx = 0; S.mapTy = 0;
   const w = $('map-zoom-wrapper');
@@ -1167,11 +1364,16 @@ function resetMapTransform() {
   }
 }
 
+let lastTouchTime = 0;
 function bindMapClickEvents() {
   const mc = $('map-container');
-  mc.addEventListener('click', onMapClick);
+  mc.addEventListener('click', e => {
+    if (Date.now() - lastTouchTime < 500) return;
+    onMapClick(e);
+  });
   mc.addEventListener('touchend', e => {
     if (e.changedTouches.length === 1 && !S.pinching) {
+      lastTouchTime = Date.now();
       onMapClick({ clientX: e.changedTouches[0].clientX, clientY: e.changedTouches[0].clientY });
     }
   });

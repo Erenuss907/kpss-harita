@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Türkiye Dağları ve Gölleri Ezber Rehberi</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 8mm 12mm;
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #1e293b;
+      background: #0f172a;
+      font-size: 11.5px;
+      line-height: 1.45;
+      padding: 24px 12px 60px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* Screen Toolbar */
+    .screen-toolbar {
+      max-width: 820px;
+      margin: 0 auto 20px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+    .toolbar-info {
+      color: #94a3b8;
+      font-size: 12px;
+    }
+    .toolbar-info strong {
+      color: #f8fafc;
+      font-size: 13px;
+    }
+    .toolbar-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .btn-print {
+      background: #3b82f6;
+      color: #ffffff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 12.5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+    .btn-print:hover { background: #2563eb; }
+    .btn-app-link {
+      background: #334155;
+      color: #f8fafc;
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-app-link:hover { background: #475569; }
+
+    /* A4 Pages Container */
+    .page {
+      max-width: 820px;
+      width: 100%;
+      margin: 0 auto 28px;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    @media screen and (min-width: 820px) {
+      .page {
+        min-height: 275mm;
+      }
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+        padding: 0;
+      }
+      .screen-toolbar {
+        display: none;
+      }
+      .page {
+        max-width: 100%;
+        width: 100%;
+        height: 275mm;
+        max-height: 275mm;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+        border-radius: 0;
+        overflow: hidden;
+        page-break-after: always;
+      }
+      .page:last-child {
+        page-break-after: avoid;
+      }
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      color: #ffffff;
+      padding: 12px 16px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header-logo {
+      font-size: 28px;
+      line-height: 1;
+      background: rgba(255, 255, 255, 0.12);
+      padding: 6px 8px;
+      border-radius: 10px;
+    }
+    .header-title h1 {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      color: #ffffff;
+    }
+    .header-title p {
+      font-size: 10.5px;
+      color: #93c5fd;
+      margin-top: 2px;
+    }
+    .header-badge {
+      background: #f59e0b;
+      color: #0f172a;
+      font-size: 9.5px;
+      font-weight: 800;
+      padding: 4px 9px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    /* Url Card */
+    .url-bar {
+      background: #f1f5f9;
+      border: 1px dashed #cbd5e1;
+      border-radius: 8px;
+      padding: 5px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      margin-bottom: 8px;
+    }
+    .url-bar strong {
+      color: #1e3a8a;
+    }
+    .url-bar span {
+      background: #e2e8f0;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-family: Consolas, monospace;
+      font-size: 9.5px;
+    }
+
+    /* Sections */
+    .section {
+      margin-bottom: 7px;
+    }
+    .sec-title {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 5px;
+      padding-bottom: 3px;
+      border-bottom: 1.5px solid #e2e8f0;
+    }
+    .sec-title .icon {
+      font-size: 14px;
+    }
+
+    /* Grids */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 7px;
+    }
+
+    /* Cards */
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .card-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 3px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .card p {
+      font-size: 10px;
+      color: #475569;
+      line-height: 1.35;
+    }
+    .highlight-card {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+    .highlight-card .card-title {
+      color: #1d4ed8;
+    }
+
+    /* Pills / Badges */
+    .pill {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-right: 4px;
+    }
+    .pill-blue { background: #dbeafe; color: #1e40af; }
+    .pill-green { background: #dcfce7; color: #166534; }
+    .pill-orange { background: #ffedd5; color: #9a3412; }
+    .pill-purple { background: #f3e8ff; color: #6b21a8; }
+    .pill-red { background: #fee2e2; color: #991b1b; }
+
+    /* Mnemonics Table */
+    .mnemonics-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9.8px;
+      margin-top: 3px;
+    }
+    .mnemonics-table th {
+      background: #1e293b;
+      color: #ffffff;
+      padding: 5px 8px;
+      text-align: left;
+      font-weight: 700;
+      font-size: 9.5px;
+    }
+    .mnemonics-table td {
+      padding: 5px 8px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .mnemonics-table tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+    .mnem-code {
+      font-weight: 800;
+      color: #b45309;
+      background: #fef3c7;
+      padding: 1px 6px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    /* Step numbers */
+    .step-list {
+      list-style: none;
+      counter-reset: step-counter;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .step-item {
+      position: relative;
+      padding-left: 24px;
+      font-size: 10px;
+      color: #334155;
+    }
+    .step-item::before {
+      counter-increment: step-counter;
+      content: counter(step-counter);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 16px;
+      height: 16px;
+      background: #2563eb;
+      color: #ffffff;
+      font-size: 9.5px;
+      font-weight: 800;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Footer */
+    .footer {
+      border-top: 1px solid #cbd5e1;
+      padding-top: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 9px;
+      color: #64748b;
+    }
+    .footer strong {
+      color: #0f172a;
+    }
+  </style>
+<body>
+
+  <!-- Screen View Toolbar -->
+  <div class="screen-toolbar">
+    <div class="toolbar-info">
+      <strong>📄 KPSS Türkiye Dağları & Gölleri Rehberi</strong> (2 Sayfa A4)
+      <div>Bu kılavuzu inceleyebilir veya tek tıkla PDF olarak kaydedebilirsiniz.</div>
+    </div>
+    <div class="toolbar-actions">
+      <button class="btn-print" onclick="window.print()">🖨️ Yazdır / PDF İndir</button>
+      <a class="btn-app-link" href="./index.html" target="_blank">🗺️ Harita Uygulamasını Aç</a>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SAYFA 1: BAŞLANGIÇ, HARİTALAR, MODLAR & KEŞİF
+       ═══════════════════════════════════════════════════════ -->
+  <div class="page">
+    <div>
+      <!-- Header -->
+      <div class="header">
+        <div class="header-left">
+          <div class="header-logo">🗺️</div>
+          <div class="header-title">
+            <h1>Türkiye Dağları & Gölleri Ezber Rehberi</h1>
+            <p>KPSS Coğrafya Harita Sorularını 12'den Vurma Kılavuzu</p>
+          </div>
+        </div>
+        <div class="header-badge">Hızlı Başlangıç</div>
+      </div>
+
+      <!-- Live URL Bar -->
+      <div class="url-bar">
+        <div><strong>🌐 Canlı Uygulama Adresi:</strong> Herhangi bir kurulum yapmadan tarayıcınızdan hemen açın.</div>
+        <span>https://erenuss907.github.io/kpss-harita/</span>
+      </div>
+
+      <!-- 1. Amaç -->
+      <div class="section">
+        <div class="sec-title"><span class="icon">🎯</span> 1. Uygulama Nedir ve Neyi Hedefler?</div>
+        <div class="card highlight-card">
+          <p>Bu uygulama; KPSS Genel Kültür Coğrafya testinde her yıl banko çıkan <b>Türkiye'nin Dağları ve Gölleri</b> sorularını sıkıcı ezberler yerine; <b>görsel hafıza, etkileşimli haritalar, akrostiş şifreler ve oyunlaştırma</b> yöntemiyle kalıcı olarak zihninize kazımak için geliştirilmiş yeni nesil bir çalışma platformudur.</p>
+        </div>
+      </div>
+
+      <!-- 2. Kapsanan Konular -->
+      <div class="section">
+        <div class="sec-title"><span class="icon">📚</span> 2. Kapsanan Konular ve Haritalar</div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">⛰️ Türkiye'nin Dağları (52 Zirve)</div>
+            <p style="margin-bottom:4px">Orijinal yüksek çözünürlüklü Türkiye Dağlar Haritası üzerinde 3 ana jeolojik grup:</p>
+            <p>• <span class="pill pill-blue">Kıvrımlı Dağlar</span> Yıldız, Kaçkar, Ilgaz, Bolkar, Aladağlar, Cilo (37 dağ)</p>
+            <p>• <span class="pill pill-orange">Kırıklı Dağlar</span> Kaz, Madra, Yunt, Boz, Aydın, Menteşe Horstları (5 dağ)</p>
+            <p>• <span class="pill pill-red">Volkanik Dağlar</span> Ağrı, Tendürek, Süphan, Nemrut, Erciyes, Hasan D. (10 dağ)</p>
+          </div>
+
+          <div class="card">
+            <div class="card-title">💧 Türkiye'nin Gölleri (8 Özel Harita)</div>
+            <p style="margin-bottom:4px">Kusursuz renk kodlu 8 ayrı tematik harita ve tüm oluşum türleri:</p>
+            <p>• <span class="pill pill-blue">Tektonik Göller</span> Tuz, İznik, Manyas, Sapanca, Eğirdir, Burdur (19 göl)</p>
+            <p>• <span class="pill pill-orange">Karstik Göller</span> Salda, Avlan, Elmalı, Kestel, Kızılören (13 göl)</p>
+            <p>• <span class="pill pill-purple">Volkanik / Set</span> Nemrut, Meke, Van, Balık, Çıldır, Erçek (10 göl)</p>
+            <p>• <span class="pill pill-green">Set Gölleri</span> Heyelan (Abant, Tortum), Kıyı (Terkos), Alüvyon (Bafa, Eymir)</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Soru Tipleri -->
+      <div class="section">
+        <div class="sec-title"><span class="icon">🕹️</span> 3. Soru Tipleri ve Pratik Seçenekleri</div>
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-title">📍 İsimden Konuma</div>
+            <p>Ekrana dağın veya gölün adı gelir (Örn: <i>"Avlan Gölü"</i>). Sen harita üzerinde doğru noktayı bulup dokunursun. Görsel konum hafızasını zirveye çıkarır.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">🔤 Konumdan İsme</div>
+            <p>Haritada bir nokta <b>?</b> işaretiyle yanıp söner. Altta çıkan 4 çoktan seçmeli seçenek arasından doğru ismi bulursun. Hızlı test pratiği sağlar.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">🎲 Karışık Mod</div>
+            <p>Her iki soru tipini harmanlayarak sınava hazırlar. Beynin iki yönlü düşünme ve haritayı analiz etme refleksini kuvvetlendirir.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Haritayı İncele -->
+      <div class="section">
+        <div class="sec-title"><span class="icon">🗺️</span> 4. "Haritayı İncele" — Serbest Keşif Modu</div>
+        <div class="card highlight-card">
+          <p style="margin-bottom:5px">Sınav stresine girmeden önce haritayı keşfetmek isteyenler için ana menüdeki <b>"🗺️ Haritayı İncele"</b> butonu:</p>
+          <div class="grid-2" style="margin-top:4px">
+            <p>• <b>Etiketli Noktalar:</b> Seçtiğin kategorideki tüm dağlar/göller isim rozetleriyle harita üstünde açılır.</p>
+            <p>• <b>Detaylı Bilgi & Şifre:</b> Herhangi bir noktaya dokunduğunda alt kartta dağın/gölün KPSS önemi ve hafıza şifresi belirir.</p>
+            <p>• <b>🎯 Odaklan Butonu:</b> Seçtiğin noktaya kamera yumuşakça yakınlaşır; tekrar basıldığında geniş haritaya döner.</p>
+            <p>• <b>Pinch Zoom & Çift Dokunuş:</b> İki parmağınla haritayı dilediğin gibi büyütüp kaydırabilir, çift tıkla sıfırlayabilirsin.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Page 1 Footer -->
+    <div class="footer">
+      <span>Türkiye Dağları ve Gölleri Ezber Uygulaması • <b>KPSS 2026 Başarı Rehberi</b></span>
+      <span>Sayfa 1 / 2</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SAYFA 2: ŞİFRELER, AKILLI TEKRAR, KARTLAR, OYUNLAŞTIRMA
+       ═══════════════════════════════════════════════════════ -->
+  <div class="page">
+    <div>
+      <!-- 5. KPSS Şifreleri Tablosu -->
+      <div class="section">
+        <div class="sec-title"><span class="icon">💡</span> 5. KPSS Hafıza Kodlamaları & Şifreler (Uygulama İçi)</div>
+        <p style="font-size:9.5px;color:#64748b;margin-bottom:4px">Menüdeki <b>💡</b> butonuna, soru çözerkenki ipucu butonuna veya özet panellerine tıklayarak bu şifrelere her an ulaşabilirsiniz:</p>
+        <table class="mnemonics-table">
+          <thead>
+            <tr>
+              <th style="width:24%">Kategori</th>
+              <th style="width:28%">Hafıza Şifresi / Akrostiş</th>
+              <th style="width:48%">Şifrenin Açılımı (Dağ / Göl İsimleri)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>Karstik Göller</b></td>
+              <td><span class="mnem-code">SAKE / KAKES</span></td>
+              <td><b>S</b>alda, <b>A</b>vlan, <b>K</b>estel, <b>E</b>lmalı, Kızılören Obruğu</td>
+            </tr>
+            <tr>
+              <td><b>Tektonik Göller</b></td>
+              <td><span class="mnem-code">BASİT MUHASEBE</span></td>
+              <td><b>B</b>urdur, <b>A</b>kşehir, <b>S</b>apanca, <b>İ</b>znik, <b>T</b>uz, <b>M</b>anyas, <b>U</b>lubat, <b>H</b>azar, <b>E</b>ber, <b>E</b>ğirdir</td>
+            </tr>
+            <tr>
+              <td><b>Alüvyon Set Gölleri</b></td>
+              <td><span class="mnem-code">BAMYAM</span></td>
+              <td><b>B</b>afa (Çamiçi), <b>A</b>kgöl, <b>M</b>armara, <b>K</b>öyceğiz, <b>E</b>ymir, <b>M</b>ogan</td>
+            </tr>
+            <tr>
+              <td><b>Heyelan Set Gölleri</b></td>
+              <td><span class="mnem-code">BAZİST / UYSAL TEYZE</span></td>
+              <td><b>B</b>orabay, <b>A</b>bant, <b>Z</b>inav, <b>İ</b>sviçre/Sera, <b>T</b>ortum, <b>Y</b>edigöller, <b>S</b>ünnet</td>
+            </tr>
+            <tr>
+              <td><b>Kıyı Set Gölleri</b></td>
+              <td><span class="mnem-code">BÜYÜK KÜÇÜK TERKOS...</span></td>
+              <td><b>Büyük</b>çekmece, <b>Küçük</b>çekmece, <b>Terkos</b> (Durusu), <b>Dil</b> (Karine), Akyatan, Ağyatan</td>
+            </tr>
+            <tr>
+              <td><b>Volkanik Set Gölleri</b></td>
+              <td><span class="mnem-code">ERÇEK'Lİ NAZİK VANLI...</span></td>
+              <td><b>Erçek</b>, <b>Nazik</b>, <b>Van</b>, <b>Balık</b>, <b>Çıldır</b>, Haçlı (Erçek'li Nazik Vanlı Balıkçı Çıldırdı)</td>
+            </tr>
+            <tr>
+              <td><b>Kırıklı Dağlar</b></td>
+              <td><span class="mnem-code">KAZ MA YUNT BOZ...</span></td>
+              <td><b>Kaz</b>, <b>Ma</b>dra, <b>Yunt</b>, <b>Boz</b>dağlar, <b>Aydın</b>, <b>Menteşe</b> Dağları (Kuzeyden Güneye)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 6. Akıllı Tekrar & Bilgi Kartları -->
+      <div class="section">
+        <div class="sec-title"><span class="icon">🧠</span> 6. Akıllı Tekrar Sistemi ve Bilgi Kartları (Flashcards)</div>
+        <div class="grid-2">
+          <div class="card highlight-card">
+            <div class="card-title">🎯 "Yanıldıklarımı Sor" Modu</div>
+            <p>Hata yaptığın her soru sistem tarafından kaydedilir. Ana menüde <b>"Yanıldıklarımı Sor"</b> butonu belirir. Sadece yapamadığın soruları tekrar çalıştırır; doğru cevapladıkça bu hata havuzu erir ve tam öğrenme sağlanır.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">🃏 Bilgi Kartları (Kart & Test)</div>
+            <p>Göller kategorisinde açılan <b>"Bilgi Kartları"</b> butonuyla soru-cevap çalışması yapabilirsin. <i>"Nemrut gölü nerededir?"</i> ➔ Dokun-çevir cevabı gör veya 4 şıklı kart testini çöz!</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. Oyunlaştırma & Motivasyon -->
+      <div class="section">
+        <div class="sec-title"><span class="icon">🏆</span> 7. Oyunlaştırma, Motivasyon & Süre Modu</div>
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-title">🔥 Seri Sayacı (Streak)</div>
+            <p>Peş peşe doğru cevaplarda ekranda alev animasyonu parlar. 3, 5 ve 10 serilerinde özel kutlama sesleri ve bildirimler çıkar.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">⏱️ 15 sn Hızlı Tur</div>
+            <p>Süreye Karşı modunu açtığında soru başına 15 saniye verilir. Renk değiştiren geri sayım çubuğu ile sınav hızını maksimuma çıkarır.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">🎖️ 10 Başarı Rozeti</div>
+            <p>Kusursuz Tur, Dağlar Kurdu, Göller Kaşifi, Seri Canavarı gibi 10 farklı başarı rozetinin kilidini açarak ilerlemeni gör.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8. Mobil Kurulum PWA -->
+      <div class="section">
+        <div class="sec-title"><span class="icon">📱</span> 8. Telefona ve Tablete Uygulama Olarak Kurma (PWA)</div>
+        <div class="card highlight-card">
+          <ul class="step-list">
+            <li class="step-item">Android veya iPad/iPhone cihazınızda Google Chrome veya Safari ile <b>https://erenuss907.github.io/kpss-harita/</b> adresine girin.</li>
+            <li class="step-item">Tarayıcının sağ üstündeki <b>üç noktaya (⋮)</b> veya paylaş butonuna dokunun.</li>
+            <li class="step-item">Çıkan menüden <b>"Uygulamayı Yükle"</b> (veya <b>"Ana Ekrana Ekle"</b>) seçeneğine basın.</li>
+            <li class="step-item">Uygulama özel mavi dağ logosuyla telefonunuzun ana ekranına kurulur. Tıkladığınızda internetsiz bile çalışan tam ekran bir mobil uygulama deneyimi yaşatır!</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Page 2 Footer -->
+    <div class="footer">
+      <span>Türkiye Dağları ve Gölleri Ezber Uygulaması • <b>KPSS Coğrafya Sınavında Başarılar Dileriz!</b></span>
+      <span>Sayfa 2 / 2</span>
+    </div>
+  </div>
+
+</body>
+</html>
