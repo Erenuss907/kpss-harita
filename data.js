@@ -15,6 +15,23 @@ const CAT_TO_IMAGE = {
   'Alüvyon Set Gölleri':  'images/aluvyon-set-goller.jpg',
   'Heyelan Set Gölleri':  'images/heyelan-set-goller.jpg',
   'Kıyı Set Gölleri':     'images/kiyi-set-goller.jpg',
+  // Ovalar (daglar.jpg fiziki haritası üzerinde)
+  'Delta Ovaları':              'images/daglar.jpg',
+  'Karstik Ovalar (Polye)':     'images/daglar.jpg',
+  'Tektonik Ovalar':            'images/daglar.jpg',
+  // Platolar (daglar.jpg fiziki haritası üzerinde)
+  'Karstik Platolar':           'images/daglar.jpg',
+  'Volkanik Platolar':          'images/daglar.jpg',
+  'Aşınım Platoları':           'images/daglar.jpg',
+  'Tabaka Düzlüğü Platoları':   'images/daglar.jpg',
+  // Akarsular (daglar.jpg fiziki haritası üzerinde)
+  'Karadeniz Akarsuları':       'images/daglar.jpg',
+  'Akdeniz Akarsuları':         'images/daglar.jpg',
+  'Ege ve Marmara Akarsuları':  'images/daglar.jpg',
+  'Basra ve Hazar Akarsuları':  'images/daglar.jpg',
+  // Geçitler (daglar.jpg fiziki haritası üzerinde)
+  'Karadeniz Geçitleri':        'images/daglar.jpg',
+  'Akdeniz Geçitleri':          'images/daglar.jpg',
 };
 
 const DAGLAR = [
@@ -194,7 +211,120 @@ const GOLLER = [
   {id:'gol-tatli',     isim:'Tatlı G.',        kategori:'Kıyı Set Gölleri',    tip:'gol', x:52.20, y:37.00, not:'Samsun / Kızılırmak Deltası - Tatlı su lagün gölü.'},
 ];
 
-const ALL_ITEMS = [...DAGLAR, ...GOLLER];
+const OVALAR = [
+  // ── Delta Ovaları ────────────────────────────────────────────────────────
+  {id:'ova-cukurova',   isim:'Çukurova',        kategori:'Delta Ovaları',          tip:'ova', x:52.0, y:73.5, not:'Adana - Seyhan ve Ceyhan nehirlerinin oluşturduğu Türkiye\'nin en büyük delta ovası; alüvyal ve en verimli tarım alanı.'},
+  {id:'ova-silifke',    isim:'Silifke Ovası',   kategori:'Delta Ovaları',          tip:'ova', x:44.5, y:75.5, not:'Mersin - Göksu Nehri\'nin Akdeniz\'e döküldüğü yerde oluşturduğu verimli delta ovası.'},
+  {id:'ova-bafra',      isim:'Bafra Ovası',     kategori:'Delta Ovaları',          tip:'ova', x:50.0, y:17.5, not:'Samsun - Kızılırmak\'ın Karadeniz\'e döküldüğü yerde oluşturduğu delta ovası; tütün ve pirinç tarımı.'},
+  {id:'ova-carsamba',   isim:'Çarşamba Ovası',  kategori:'Delta Ovaları',          tip:'ova', x:55.5, y:20.0, not:'Samsun - Yeşilırmak\'ın Karadeniz\'e döküldüğü yerde oluşturduğu delta ovası; mısır ve fındık alanı.'},
+  {id:'ova-dikili',     isim:'Dikili Ovası',    kategori:'Delta Ovaları',          tip:'ova', x:9.8,  y:46.5, not:'İzmir - Bakırçay Nehri\'nin Ege Denizi kıyısında oluşturduğu delta ovası.'},
+  {id:'ova-menemen',    isim:'Menemen Ovası',   kategori:'Delta Ovaları',          tip:'ova', x:10.5, y:50.0, not:'İzmir - Gediz Nehri\'nin Ege Denizi kıyısında oluşturduğu verimli delta ovası.'},
+  {id:'ova-selcuk',     isim:'Selçuk Ovası',    kategori:'Delta Ovaları',          tip:'ova', x:11.5, y:56.5, not:'İzmir - Küçük Menderes\'in oluşturduğu delta ovası; Efes antik liman kentini doldurarak içeride bırakmıştır.'},
+  {id:'ova-balat',      isim:'Balat Ovası',     kategori:'Delta Ovaları',          tip:'ova', x:12.0, y:60.5, not:'Aydın - Büyük Menderes\'in oluşturduğu delta ovası; Milet antik liman kentini doldurup içeride bırakmıştır.'},
+  {id:'ova-karasu',     isim:'Karasu Deltası',  kategori:'Delta Ovaları',          tip:'ova', x:27.5, y:22.0, not:'Sakarya - Sakarya Nehri\'nin Karadeniz\'e döküldüğü ağızda oluşturduğu kıyı birikim deltası.'},
+
+  // ── Karstik Ovalar (Polye - TAKKEM) ──────────────────────────────────────
+  {id:'ova-tefenni',    isim:'Tefenni Ovası',   kategori:'Karstik Ovalar (Polye)', tip:'ova', x:23.5, y:62.0, not:'Burdur (TAKKEM\'in T\'si) - Kalker çözünmesiyle oluşan karstik polye ovası.'},
+  {id:'ova-acipayam',   isim:'Acıpayam Ovası',  kategori:'Karstik Ovalar (Polye)', tip:'ova', x:21.0, y:59.5, not:'Denizli (TAKKEM\'in A\'sı) - Batı Toroslar kuşağında verimli karstik polye ovası.'},
+  {id:'ova-korkuteli',  isim:'Korkuteli Ovası', kategori:'Karstik Ovalar (Polye)', tip:'ova', x:25.5, y:65.0, not:'Antalya (TAKKEM\'in K\'si) - Toroslar üzerinde yer alan yüksek karstik polye ovası.'},
+  {id:'ova-kestel',     isim:'Kestel Ovası',    kategori:'Karstik Ovalar (Polye)', tip:'ova', x:27.0, y:63.5, not:'Burdur (TAKKEM\'in K\'si) - Göller Yöresi\'nde yer alan karstik ova; düden ve göl çöküntüleri içerir.'},
+  {id:'ova-elmali',     isim:'Elmalı Ovası',    kategori:'Karstik Ovalar (Polye)', tip:'ova', x:23.5, y:67.5, not:'Antalya (TAKKEM\'in E\'si) - Bey Dağları eteğinde kireçtaşı çözünmesiyle oluşmuş yüksek karstik polye ovası.'},
+  {id:'ova-mugla',      isim:'Muğla Ovası',     kategori:'Karstik Ovalar (Polye)', tip:'ova', x:16.5, y:64.0, not:'Muğla (TAKKEM\'in M\'si) - Menteşe yöresinde kireçtaşları arasında yer alan geniş polye ovası.'},
+  {id:'ova-gembos',     isim:'Gembos Ovası',    kategori:'Karstik Ovalar (Polye)', tip:'ova', x:29.5, y:65.0, not:'Antalya-Konya sınırı - Kışın göl haline gelen, yazın kuruyan tipik karstik polye tabanı.'},
+  {id:'ova-celtikci',   isim:'Çeltikçi Ovası',  kategori:'Karstik Ovalar (Polye)', tip:'ova', x:26.5, y:61.5, not:'Burdur - Göller Yöresi\'nde kalker çözünmesiyle oluşmuş karstik polye ovası.'},
+
+  // ── Tektonik Ovalar ──────────────────────────────────────────────────────
+  {id:'ova-konya',      isim:'Konya Ovası',     kategori:'Tektonik Ovalar',        tip:'ova', x:37.0, y:56.0, not:'Konya - Türkiye\'nin en büyük iç tektonik ovası; eski göl tabanı ve tahıl ambarı (KOP).'},
+  {id:'ova-eskisehir',  isim:'Eskişehir Ovası', kategori:'Tektonik Ovalar',        tip:'ova', x:28.5, y:36.5, not:'Eskişehir - Porsuk Çayı havzasında fay hattı kökenli çöküntü ovası.'},
+  {id:'ova-bursa',      isim:'Bursa Ovası',     kategori:'Tektonik Ovalar',        tip:'ova', x:19.5, y:29.5, not:'Bursa - KAF güney kolu üzerinde verimli tarım ve sanayi ovası.'},
+  {id:'ova-duzce',      isim:'Düzce Ovası',     kategori:'Tektonik Ovalar',        tip:'ova', x:29.5, y:24.5, not:'Düzce - Kuzey Anadolu Fay Hattı (KAF) üzerinde çöküntü ovası.'},
+  {id:'ova-bolu',       isim:'Bolu Ovası',      kategori:'Tektonik Ovalar',        tip:'ova', x:32.5, y:26.5, not:'Bolu - KAF kuşağında dağlar arasında uzanan tektonik havza ovası.'},
+  {id:'ova-erbaa-niksar',isim:'Erbaa-Niksar Ovası',kategori:'Tektonik Ovalar',     tip:'ova', x:57.5, y:28.5, not:'Tokat - Kelkit Çayı tektonik graben çöküntüsünde yer alan çok verimli KAF ovası.'},
+  {id:'ova-malatya',    isim:'Malatya Ovası',   kategori:'Tektonik Ovalar',        tip:'ova', x:62.5, y:51.5, not:'Malatya - DAF kuşağında yer alan, kayısı bahçeleriyle ünlü tektonik ova.'},
+  {id:'ova-elazig',     isim:'Elazığ Ovası',    kategori:'Tektonik Ovalar',        tip:'ova', x:67.0, y:49.5, not:'Elazığ - Uluova olarak da bilinen, DAF kuşağındaki verimli tektonik ova.'},
+  {id:'ova-erzincan',   isim:'Erzincan Ovası',  kategori:'Tektonik Ovalar',        tip:'ova', x:68.0, y:37.5, not:'Erzincan - KAF hattında Karasu havzasında yüksek tektonik çöküntü ovası.'},
+  {id:'ova-erzurum',    isim:'Erzurum Ovası',   kategori:'Tektonik Ovalar',        tip:'ova', x:77.5, y:34.0, not:'Erzurum - ~1900m yükseltide KAF-DAF kesişim kuşağındaki yüksek tektonik ova.'},
+  {id:'ova-pasinler',   isim:'Pasinler Ovası',  kategori:'Tektonik Ovalar',        tip:'ova', x:80.5, y:34.5, not:'Erzurum - Aras Nehri havzasında yer alan verimli tektonik ova.'},
+  {id:'ova-igdir',      isim:'Iğdır Ovası',     kategori:'Tektonik Ovalar',        tip:'ova', x:91.0, y:35.5, not:'Iğdır - Çevresine göre çukurda kalan tektonik ova; mikroklima ile pamuk yetiştirilir.'},
+  {id:'ova-amik',       isim:'Amik Ovası',      kategori:'Tektonik Ovalar',        tip:'ova', x:54.0, y:73.0, not:'Hatay - Asi Nehri grabeninde yer alan çok verimli tektonik çöküntü ovası.'},
+];
+
+const PLATOLAR = [
+  // ── Karstik Platolar ─────────────────────────────────────────────────────
+  {id:'plato-teke',     isim:'Teke Platosu',    kategori:'Karstik Platolar',       tip:'plato', x:22.0, y:71.0, not:'Antalya/Muğla - Kalker kireçtaşı erimesiyle oluşan karstik plato; kurak yüzey, kıl keçisi ve seyrek nüfus.'},
+  {id:'plato-taseli',   isim:'Taşeli Platosu',  kategori:'Karstik Platolar',       tip:'plato', x:37.0, y:73.0, not:'Mersin/Karaman - Göksu kanyonlarıyla yarılmış engebeli karstik plato; kıl keçisi ve seyrek nüfus.'},
+
+  // ── Volkanik Platolar ────────────────────────────────────────────────────
+  {id:'plato-erzurum-kars',isim:'Erzurum-Kars Platosu',kategori:'Volkanik Platolar',tip:'plato', x:82.5, y:28.5, not:'Erzurum/Kars - Lav örtülü en yüksek plato; çernezyom toprağı, yaz yağışları ve büyükbaş mera hayvancılığı.'},
+  {id:'plato-ardahan',  isim:'Ardahan Platosu', kategori:'Volkanik Platolar',       tip:'plato', x:84.0, y:21.0, not:'Ardahan - Kura Nehri havzasında yer alan bazaltik lav örtülü yüksek plato.'},
+
+  // ── Aşınım Platoları ─────────────────────────────────────────────────────
+  {id:'plato-catalca-kocaeli',isim:'Çatalca-Kocaeli Platosu',kategori:'Aşınım Platoları',tip:'plato', x:22.5, y:22.0, not:'İstanbul/Kocaeli - Türkiye\'nin en alçak aşınım (peneplen) platosu; sanayi, ticaret ve nüfus yoğunluğu en yüksek olan plato.'},
+
+  // ── Tabaka Düzlüğü Platoları ─────────────────────────────────────────────
+  {id:'plato-haymana',  isim:'Haymana Platosu', kategori:'Tabaka Düzlüğü Platoları',tip:'plato', x:34.5, y:38.0, not:'Ankara - Sakarya kollarıyla yarılmış yatay duruşlu plato; tiftik keçisi ve tahıl tarımı.'},
+  {id:'plato-cihanbeyli',isim:'Cihanbeyli Platosu',kategori:'Tabaka Düzlüğü Platoları',tip:'plato', x:35.0, y:49.0, not:'Konya - Tuz Gölü batısında uzanan geniş plato; Türkiye\'nin en önemli tahıl alanlarındandır.'},
+  {id:'plato-obruk',    isim:'Obruk Platosu',   kategori:'Tabaka Düzlüğü Platoları',tip:'plato', x:38.0, y:55.0, not:'Konya/Aksaray - Tuz Gölü güneyinde derin karstik çöküntü kuyuları (obruklar) içeren plato; koyun yetiştiriciliği.'},
+  {id:'plato-bozok',    isim:'Bozok Platosu',   kategori:'Tabaka Düzlüğü Platoları',tip:'plato', x:47.0, y:39.0, not:'Yozgat - Kızılırmak yayı içinde kalan geniş İç Anadolu platosu; tahıl ve küçükbaş hayvancılık.'},
+  {id:'plato-uzunyayla',isim:'Uzunyayla Platosu',kategori:'Tabaka Düzlüğü Platoları',tip:'plato', x:58.0, y:44.0, not:'Sivas/Kayseri - Seyhan ve Fırat kolları arasında yüksek plato; at yetiştiriciliği ve Kangal köpeği yöresi.'},
+  {id:'plato-yazilikaya',isim:'Yazılıkaya (Bayat) Platosu',kategori:'Tabaka Düzlüğü Platoları',tip:'plato', x:25.5, y:42.0, not:'Eskişehir/Afyon - Frig Vadisi anıtlarını içeren Ege-İç Anadolu geçiş platosu.'},
+  {id:'plato-gaziantep',isim:'Gaziantep Platosu',kategori:'Tabaka Düzlüğü Platoları',tip:'plato', x:62.0, y:69.0, not:'Gaziantep - Fırat Nehri batısında uzanan plato; Antep fıstığı, zeytin ve bağcılık.'},
+  {id:'plato-sanliurfa',isim:'Şanlıurfa Platosu',kategori:'Tabaka Düzlüğü Platoları',tip:'plato', x:70.0, y:67.0, not:'Şanlıurfa - GAP ile birlikte sulu tarım ve pamuk üretiminin yoğunlaştığı geniş Güneydoğu platosu.'},
+  {id:'plato-diyarbakir',isim:'Diyarbakır Platosu',kategori:'Tabaka Düzlüğü Platoları',tip:'plato', x:72.0, y:58.5, not:'Diyarbakır - Dicle Nehri havzasında Karacadağ bazalt lavlarıyla kaplı geniş tabaka düzlüğü platosu.'},
+];
+
+const AKARSULAR = [
+  // ── Karadeniz Akarsuları ─────────────────────────────────────────────────
+  {id:'akar-kizilirmak', isim:'Kızılırmak',      kategori:'Karadeniz Akarsuları',      tip:'akarsu', x:48.0, y:32.0, not:'Sivas Kızıldağ\'dan doğar, Bafra Deltası\'ndan Karadeniz\'e dökülür. 1355 km ile Türkiye sınırları içindeki en uzun nehirdir (Hirfanlı, Kesikköprü, Altınkaya barajları).'},
+  {id:'akar-yesilirmak', isim:'Yeşilırmak',      kategori:'Karadeniz Akarsuları',      tip:'akarsu', x:56.0, y:25.0, not:'Sivas-Tokat dağlarından doğar, Çarşamba Deltası\'ndan dökülür. En büyük kolu Kelkit Çayı\'dır; Almus ve Hasan Uğurlu barajları yer alır.'},
+  {id:'akar-sakarya',    isim:'Sakarya Nehri',   kategori:'Karadeniz Akarsuları',      tip:'akarsu', x:28.5, y:28.0, not:'Eskişehir Çifteler\'den doğar (Porsuk ve Ankara çaylarını alır), Karasu\'dan dökülür. Türkiye\'de 4 farklı coğrafi bölgeden geçen tek nehirdir.'},
+  {id:'akar-coruh',      isim:'Çoruh Nehri',     kategori:'Karadeniz Akarsuları',      tip:'akarsu', x:77.0, y:21.0, not:'Mescit Dağları\'ndan doğar, Gürcistan (Batum)\'dan Karadeniz\'e dökülür. Türkiye\'nin en hızlı akan ve en yüksek hidroelektrik potansiyelli nehirlerindendir (Yusufeli ve Deriner barajları).'},
+  {id:'akar-bartin',     isim:'Bartın Çayı',     kategori:'Karadeniz Akarsuları',      tip:'akarsu', x:35.0, y:17.5, not:'Küre Dağları\'ndan doğar, Karadeniz\'e dökülür. Türkiye\'de ağız kısmında akarsu taşımacılığı (yolcu/yük) yapılabilen tek nehirdir.'},
+  {id:'akar-filyos',     isim:'Yenice (Filyos) Çayı',kategori:'Karadeniz Akarsuları',  tip:'akarsu', x:34.0, y:20.5, not:'Bolu ve Karabük dağlarından doğar, Karadeniz\'e dökülür. Demir-çelik endüstrisinin su kaynağı ve Karadeniz liman vadisidir.'},
+
+  // ── Akdeniz Akarsuları ───────────────────────────────────────────────────
+  {id:'akar-seyhan',     isim:'Seyhan Nehri',    kategori:'Akdeniz Akarsuları',        tip:'akarsu', x:50.0, y:67.0, not:'Aladağlar ve Tahtalı dağlarından doğar (Zamantı ve Göksu kolları), Çukurova\'dan Akdeniz\'e dökülür. Seyhan Barajı Adana Ovası\'nı sular.'},
+  {id:'akar-ceyhan',     isim:'Ceyhan Nehri',    kategori:'Akdeniz Akarsuları',        tip:'akarsu', x:55.0, y:66.0, not:'Elbistan havzasından doğar, Çukurova\'nın doğusundan İskenderun Körfezi yakınına dökülür. Menzelet ve Aslantaş barajları bulunur.'},
+  {id:'akar-goksu',      isim:'Göksu Nehri',     kategori:'Akdeniz Akarsuları',        tip:'akarsu', x:42.0, y:72.0, not:'Orta Toroslar\'dan doğar, Taşeli Platosu\'nda derin kanyonlar oluşturarak Silifke Deltası\'ndan Akdeniz\'e dökülür (Mavi Tünel ile Konya Ovası\'na su aktarılır - KOP).'},
+  {id:'akar-manavgat',   isim:'Manavgat Çayı',   kategori:'Akdeniz Akarsuları',        tip:'akarsu', x:33.0, y:69.0, not:'Batı Toroslar\'ın gür karstik kaynaklarıyla (Dumanlı kaynağı) beslendiği için debisi yıl boyu çok düzenlidir; Oymapınar Barajı üzerindedir.'},
+  {id:'akar-duden',      isim:'Düden Çayı',      kategori:'Akdeniz Akarsuları',        tip:'akarsu', x:28.0, y:68.0, not:'Antalya karstik traverten platosundan doğar; yer altından akarak falezlerden görkemli biçimde Akdeniz\'e dökülür.'},
+  {id:'akar-aksu',       isim:'Aksu Çayı',       kategori:'Akdeniz Akarsuları',        tip:'akarsu', x:30.5, y:67.5, not:'Eğirdir ve Kovada gölleri çevresinden doğar, Antalya Ovası\'ndan Akdeniz\'e dökülür. Perge antik kenti yakınından geçer.'},
+  {id:'akar-dalaman',    isim:'Dalaman Çayı',    kategori:'Akdeniz Akarsuları',        tip:'akarsu', x:20.0, y:67.0, not:'Batı Toroslar ve Göller Yöresi sınırından doğar, Köyceğiz-Fethiye arasında denize dökülür; Türkiye\'nin gözde rafting nehirlerindendir.'},
+  {id:'akar-asi',        isim:'Asi Nehri',       kategori:'Akdeniz Akarsuları',        tip:'akarsu', x:53.5, y:77.0, not:'Lübnan Bekaa Vadisi\'nden doğar, Suriye\'den geçerek Hatay Samandağ\'dan Akdeniz\'e dökülür. Güneyden kuzeye akışı sebebiyle \'Ters Akan Nehir\' olarak bilinir.'},
+
+  // ── Ege ve Marmara Akarsuları ────────────────────────────────────────────
+  {id:'akar-meric',      isim:'Meriç Nehri',     kategori:'Ege ve Marmara Akarsuları', tip:'akarsu', x:10.0, y:24.0, not:'Bulgaristan Rila Dağları\'ndan doğar, Türkiye-Yunanistan sınırını çizer ve Ege Denizi Saros Körfezi yakınına dökülür. En büyük kolu Ergene Çayı\'dır; taşkınlarıyla ünlüdür.'},
+  {id:'akar-bakircay',   isim:'Bakırçay',        kategori:'Ege ve Marmara Akarsuları', tip:'akarsu', x:12.0, y:45.0, not:'Manisa dağlarından doğar, Soma ve Kınık grabeninden geçerek Çandarlı Körfezi (Dikili)\'nden Ege Denizi\'ne dökülür.'},
+  {id:'akar-gediz',      isim:'Gediz Nehri',     kategori:'Ege ve Marmara Akarsuları', tip:'akarsu', x:15.0, y:48.0, not:'Murat Dağı\'ndan doğar, Uşak ve Manisa grabenlerini sulayarak İzmir Foça (Menemen Deltası)\'ndan dökülür. Demirköprü Barajı üzerindedir.'},
+  {id:'akar-kucukmenderes',isim:'Küçük Menderes',kategori:'Ege ve Marmara Akarsuları', tip:'akarsu', x:14.0, y:53.5, not:'Bozdağlar\'dan doğar, Ödemiş ve Tire ovalarından geçerek Efes limanını dolduran Selçuk Deltası\'ndan denize dökülür.'},
+  {id:'akar-buyukmenderes',isim:'Büyük Menderes',kategori:'Ege ve Marmara Akarsuları', tip:'akarsu', x:16.5, y:58.0, not:'Afyon Dinar\'dan doğar. Türkiye\'nin en tipik ve en çok menderes çizen nehridir; Milet limanını dolduran Balat Deltası\'ndan Ege\'ye dökülür.'},
+  {id:'akar-susurluk',   isim:'Susurluk Çayı',   kategori:'Ege ve Marmara Akarsuları', tip:'akarsu', x:19.5, y:35.0, not:'İç Batı Anadolu\'dan doğar (Simav Çayı ve Nilüfer Çayı kollarını alır), Marmara Denizi\'ne dökülür. Marmara Denizi havzasının en büyük akarsuyudur.'},
+
+  // ── Basra ve Hazar Akarsuları ────────────────────────────────────────────
+  {id:'akar-firat',      isim:'Fırat Nehri',     kategori:'Basra ve Hazar Akarsuları', tip:'akarsu', x:64.0, y:57.0, not:'Karasu ve Murat nehirlerinin birleşmesiyle oluşur; Türkiye\'nin su taşıma ve enerji potansiyeli en yüksek nehridir. Atatürk, Keban ve Karakaya barajları üzerindedir; Basra Körfezi\'ne dökülür.'},
+  {id:'akar-dicle',      isim:'Dicle Nehri',     kategori:'Basra ve Hazar Akarsuları', tip:'akarsu', x:72.0, y:56.0, not:'Hazar Gölü yakınlarından doğar, Güneydoğu Torosları aşarak Irak topraklarına geçer; Şattülarap\'ta Fırat ile birleşerek Basra Körfezi\'ne dökülür (Ilısu ve Kralkızı barajları).'},
+  {id:'akar-zap',        isim:'Zap Suyu',        kategori:'Basra ve Hazar Akarsuları', tip:'akarsu', x:88.0, y:60.0, not:'Hakkari Cilo Dağları\'ndan doğan, Türkiye\'nin en dik ve en hırçın akan akarsularından biridir; sınır ötesinde Dicle Nehri\'ne katılır.'},
+  {id:'akar-aras',       isim:'Aras Nehri',      kategori:'Basra ve Hazar Akarsuları', tip:'akarsu', x:85.0, y:35.0, not:'Bingöl Dağları\'ndan doğar; Ermenistan, Azerbaycan ve İran ile doğal sınır oluşturur. Kura Nehri ile birleşerek Hazar Denizi\'ne dökülür (Kapalı Havza).'},
+  {id:'akar-kura',       isim:'Kura Nehri',      kategori:'Basra ve Hazar Akarsuları', tip:'akarsu', x:83.0, y:23.0, not:'Ardahan Allahuekber Dağları\'ndan doğar, Gürcistan ve Azerbaycan\'a geçerek Aras ile birleşip Hazar Denizi\'ne dökülür (Kapalı Havza).'},
+];
+
+const GECITLER = [
+  // ── Karadeniz Geçitleri ──────────────────────────────────────────────────
+  {id:'gecit-zigana',    isim:'Zigana (Kalkanlı) Geçidi',kategori:'Karadeniz Geçitleri',tip:'gecit', x:69.5, y:27.5, not:'Trabzon - Gümüşhane arasında yer alır. Doğu Karadeniz kıyısını İç Anadolu ve Doğu Anadolu\'ya bağlayan tarihi İpek Yolu geçididir.'},
+  {id:'gecit-kop',       isim:'Kop Geçidi',             kategori:'Karadeniz Geçitleri',tip:'gecit', x:73.0, y:32.0, not:'Bayburt - Erzurum arasında Kop Dağları üzerinde yer alır. Karadeniz limanlarını Doğu Anadolu ve İran transit yoluna bağlar.'},
+  {id:'gecit-ovit',      isim:'Ovit Geçidi',            kategori:'Karadeniz Geçitleri',tip:'gecit', x:76.0, y:26.0, not:'Rize (İkizdere) - Erzurum (İspir) arasında Kaçkar dağları kuşağında yer alır; üzerinde Türkiye\'nin en uzun tünellerinden Ovit Tüneli bulunur.'},
+  {id:'gecit-ilgaz',     isim:'Ilgaz Geçidi',           kategori:'Karadeniz Geçitleri',tip:'gecit', x:40.5, y:24.5, not:'Kastamonu - Çankırı arasında Ilgaz Dağları üzerinde uzanır; Batı Karadeniz kıyı kuşağını İç Anadolu\'ya bağlar.'},
+  {id:'gecit-ecevit',    isim:'Ecevit Geçidi',          kategori:'Karadeniz Geçitleri',tip:'gecit', x:38.0, y:18.5, not:'İnebolu limanını Kastamonu iç kesimine bağlayan Küre Dağları üzerindeki tarihi İstiklal Yolu geçididir.'},
+  {id:'gecit-cankurtaran',isim:'Cankurtaran Geçidi',    kategori:'Karadeniz Geçitleri',tip:'gecit', x:79.5, y:19.5, not:'Artvin Hopa ile Borçka arasında uzanır; Karadeniz sahilini Çoruh vadisine ve Kafkaslara bağlar.'},
+
+  // ── Akdeniz Geçitleri ────────────────────────────────────────────────────
+  {id:'gecit-cubuk',     isim:'Çubuk Boğazı',           kategori:'Akdeniz Geçitleri',  tip:'gecit', x:27.5, y:64.0, not:'Antalya\'yı Burdur ve Göller Yöresi\'ne bağlayan, Batı Toroslar üzerindeki doğal boğaz ve geçittir.'},
+  {id:'gecit-sertavul',  isim:'Sertavul Geçidi',        kategori:'Akdeniz Geçitleri',  tip:'gecit', x:39.5, y:70.0, not:'Mersin (Silifke) ile Karaman arasında Orta Toroslar üzerinde yer alır; Akdeniz kıyısını İç Anadolu düzlüklerine bağlar.'},
+  {id:'gecit-gulek',     isim:'Gülek Boğazı',           kategori:'Akdeniz Geçitleri',  tip:'gecit', x:47.0, y:68.0, not:'Adana (Çukurova)\'yı Pozantı ve Niğde üzerinden İç Anadolu\'ya bağlayan tarihi Kilikya Kapısı; Akdeniz\'in en işlek geçididir.'},
+  {id:'gecit-belen',     isim:'Belen Geçidi',           kategori:'Akdeniz Geçitleri',  tip:'gecit', x:54.0, y:71.5, not:'İskenderun Körfezi kıyısını Amanos Dağları üzerinden Antakya ve Amik Ovası\'na (Suriye kapısına) bağlayan stratejik geçittir.'},
+];
+
+const ALL_ITEMS = [...DAGLAR, ...GOLLER, ...OVALAR, ...PLATOLAR, ...AKARSULAR, ...GECITLER];
 
 const ALL_KATEGORILER = [
   // Dağlar
@@ -285,6 +415,144 @@ const ALL_KATEGORILER = [
       { s: "Terkos (Durusu) Gölü'nün önemi nedir?", c: "İstanbul'un Avrupa yakasının su ihtiyacını karşılar" },
       { s: "Kıyı set göllerinin varlığı neyin kanıtıdır?", c: "O alanda dalga biriktirmesi olduğunun" },
       { s: "Kıyı set gölleri hangi dalga biriktirme şekline örnektir?", c: "Lagün" },
+    ]
+  },
+  // ── Ovalar ─────────────────────────────────────────────────────────────
+  {
+    id: 'Delta Ovaları', tip: 'ova', renk: '#27ae60',
+    kodlama: 'Akarsuların taşıdığı alüvyonları denize döküldüğü kıyıda biriktirmesiyle oluşur. Şartlar: Kıta sahanlığı geniş, kıyıda dalga ve gelgit akıntısı az, akarsu bol alüvyon taşımalı. Karadeniz: Bafra (Kızılırmak), Çarşamba (Yeşilırmak). Akdeniz: Çukurova (Seyhan-Ceyhan - En büyük delta), Silifke (Göksu). Ege: Dikili (Bakırçay), Menemen (Gediz), Selçuk (Küçük Menderes), Balat (Büyük Menderes). Marmara: Karasu Deltası.',
+    facts: [
+      { s: "Türkiye'nin yüzölçümü en büyük delta ovası hangisidir?", c: "Çukurova (Adana - Seyhan ve Ceyhan nehirleri)" },
+      { s: "Silifke Delta Ovası hangi akarsuyun getirdiği alüvyonlarla oluşmuştur?", c: "Göksu Nehri" },
+      { s: "Kızılırmak'ın Karadeniz'e döküldüğü yerde oluşan delta ovası hangisidir?", c: "Bafra Ovası (Samsun)" },
+      { s: "Yeşilırmak'ın Karadeniz'e döküldüğü yerde oluşan delta ovası hangisidir?", c: "Çarşamba Ovası (Samsun)" },
+      { s: "Efes antik liman şehrinin denizle bağlantısını kesen delta ovası hangisidir?", c: "Selçuk Ovası (Küçük Menderes)" },
+      { s: "Milet antik liman şehrini doldurarak kıyıdan uzaklaştıran ova hangisidir?", c: "Balat Ovası (Büyük Menderes)" },
+      { s: "Karadeniz'de delta oluşumuna olanak sağlayan dağ sırası hangisidir?", c: "Canik Dağları (Yükseltisi az ve kıyı gerisinde uzandığı için)" },
+    ]
+  },
+  {
+    id: 'Karstik Ovalar (Polye)', tip: 'ova', renk: '#e67e22',
+    kodlama: 'Şifre: TAKKEM (veya TAKKECİM) ➔ Tefenni, Acıpayam, Korkuteli, Kestel, Elmalı, Muğla (ayrıca Çeltikçi, Gembos). Kalker/kireçtaşı ve karstik arazilerin erimesiyle oluşan geniş polye çukurluklarıdır. Kırmızı Akdeniz toprağı (terra-rossa) yaygındır.',
+    facts: [
+      { s: "Karstik ovaların (polye) en yaygın görüldüğü coğrafi bölge neresidir?", c: "Akdeniz Bölgesi (Teke ve Göller Yöresi)" },
+      { s: "TAKKEM şifresindeki karstik ovalar hangileridir?", c: "Tefenni, Acıpayam, Korkuteli, Kestel, Elmalı, Muğla" },
+      { s: "Karstik ovalarda yaygın olarak görülen verimli kırmızı toprak türü nedir?", c: "Terra-Rossa (Kırmızı Akdeniz Toprağı)" },
+      { s: "Muğla Ovası jeolojik oluşum bakımından ne tür bir ovadır?", c: "Karstik ova (Polye)" },
+    ]
+  },
+  {
+    id: 'Tektonik Ovalar', tip: 'ova', renk: '#d35400',
+    kodlama: 'Fay hatları ve kırık kuşakları (KAF, DAF, BAF) boyunca meydana gelen tektonik çökmelerle oluşur. Türkiye\'de en fazla bulunan ova türüdür. Önemli tektonik ovalar: Konya, Eskişehir, Bursa, Düzce, Bolu, Erbaa-Niksar, Malatya, Elazığ, Erzincan, Erzurum, Pasinler, Iğdır, Amik.',
+    facts: [
+      { s: "Türkiye'nin yüzölçümü bakımından en büyük iç tektonik ovası hangisidir?", c: "Konya Ovası" },
+      { s: "Doğu Anadolu'da yer almasına rağmen mikroklima özelliğiyle pamuk yetiştirilen tektonik ova hangisidir?", c: "Iğdır Ovası" },
+      { s: "Amik Ovası hangi vadi ve graben kırık kuşağında yer alır?", c: "Asi Nehri Vadisi / Rift graben kuşağı (Hatay)" },
+      { s: "Türkiye'de sayıca en yaygın görülen ova oluşum türü hangisidir?", c: "Tektonik ovalar (Fay ve deprem kuşakları)" },
+    ]
+  },
+  // ── Platolar ────────────────────────────────────────────────────────────
+  {
+    id: 'Karstik Platolar', tip: 'plato', renk: '#16a085',
+    kodlama: 'Kalker (kireçtaşı) arazilerin akarsular tarafından derin biçimde yarılmasıyla oluşmuştur. Akdeniz kuşağında: Teke Platosu ve Taşeli Platosu. Sular yer altına sızdığı için yüzey suları azdır; tarım zor, nüfus seyrek ve kıl keçisi yetiştiriciliği yaygındır.',
+    facts: [
+      { s: "Türkiye'nin başlıca karstik platoları hangileridir?", c: "Teke Platosu ve Taşeli Platosu (Akdeniz)" },
+      { s: "Teke ve Taşeli platolarında nüfusun seyrek olmasının temel sebebi nedir?", c: "Kalkerli yapının suyu alta sızdırması (yüzey kuraklığı) ve engebeli arazi" },
+      { s: "Teke ve Taşeli platolarında yapılan geleneksel hayvancılık faaliyeti nedir?", c: "Kıl keçisi yetiştiriciliği" },
+    ]
+  },
+  {
+    id: 'Volkanik Platolar', tip: 'plato', renk: '#8e44ad',
+    kodlama: 'Lavların geniş alanlara yayılıp akarsular tarafından yarılmasıyla oluşur: Erzurum-Kars Platosu ve Ardahan Platosu. Türkiye\'nin en yüksek platolarıdır. Yaz yağışları görülür; gür çayırlar altında verimli Çernezyom (kara toprak) bulunur ve büyükbaş mera hayvancılığı yapılır.',
+    facts: [
+      { s: "Türkiye'nin en yüksek ve en soğuk platosu hangisidir?", c: "Erzurum-Kars Platosu" },
+      { s: "Erzurum-Kars platosunda yaz yağışlarına bağlı oluşan en verimli zonal toprak hangisidir?", c: "Çernezyom (Kara Toprak)" },
+      { s: "Erzurum-Kars ve Ardahan platolarında gür dağ çayırları sayesinde gelişen ekonomik faaliyet nedir?", c: "Büyükbaş mera hayvancılığı" },
+    ]
+  },
+  {
+    id: 'Aşınım Platoları', tip: 'plato', renk: '#2980b9',
+    kodlama: 'Eski dağlık kütlelerin dış kuvvetlerce aşındırılarak deniz seviyesine yakın hafif dalgalı düzlük (peneplen) haline gelmesi ve sonradan yükselmesiyle oluşur: Çatalca-Kocaeli Platosu. Türkiye\'nin en alçak platosudur. Sanayi, ticaret, ulaşım ve nüfus yoğunluğu zirvededir.',
+    facts: [
+      { s: "Türkiye'nin ortalama yükseltisi en az (en alçak) platosu hangisidir?", c: "Çatalca-Kocaeli Platosu" },
+      { s: "Türkiye'de nüfus, sanayi, ticaret ve ulaşım yoğunluğunun en fazla olduğu plato hangisidir?", c: "Çatalca-Kocaeli Platosu" },
+      { s: "Çatalca-Kocaeli Platosu jeolojik köken olarak ne tip bir platodur?", c: "Aşınım (Peneplen) platosu" },
+    ]
+  },
+  {
+    id: 'Tabaka Düzlüğü Platoları', tip: 'plato', renk: '#c0392b',
+    kodlama: 'Yatay duruşlu tortul tabakaların derin akarsu vadileri tarafından yarılmasıyla oluşmuştur (Yatay Duruşlu Platolar). İç Anadolu: Haymana (Tiftik keçisi), Cihanbeyli (Tahıl ambarı), Obruk (Karstik obruk kuyuları), Bozok (Yozgat), Uzunyayla (Sivas-Kayseri), Yazılıkaya. Güneydoğu Anadolu: Gaziantep, Şanlıurfa (GAP tarımı), Diyarbakır.',
+    facts: [
+      { s: "İç Anadolu ve Güneydoğu Anadolu'daki platoların büyük çoğunluğu oluşum bakımından hangi gruba girer?", c: "Tabaka Düzlüğü (Yatay Duruşlu) Platolar" },
+      { s: "Ankara çevresinde Tiftik Keçisi (Angora) yetiştiriciliğiyle öne çıkan plato hangisidir?", c: "Haymana Platosu" },
+      { s: "Tuz Gölü güneyinde derin çöküntü kuyularıyla ünlü tabaka düzlüğü platosu hangisidir?", c: "Obruk Platosu" },
+      { s: "GAP sulama projeleriyle birlikte pamuk ve tarım üretiminin hızla arttığı plato hangisidir?", c: "Şanlıurfa Platosu" },
+      { s: "Sivas ve Kayseri arasında yer alan, at yetiştiriciliği ve Kangal köpeğiyle bilinen plato hangisidir?", c: "Uzunyayla Platosu" },
+    ]
+  },
+  // ── Akarsular ───────────────────────────────────────────────────────────
+  {
+    id: 'Karadeniz Akarsuları', tip: 'akarsu', renk: '#0ea5e9',
+    kodlama: 'Kızılırmak (Türkiye sınırları içindeki en uzun nehir - 1355 km), Yeşilırmak (Kelkit kolu), Sakarya (4 bölgeden geçen nehir), Çoruh (En hızlı akan, rafting, Gürcistan\'dan dökülür), Bartın Çayı (Ulaşıma elverişli tek nehir), Yenice/Filyos.',
+    facts: [
+      { s: "Türkiye sınırları içinde doğup yine Türkiye sınırları içinde denize dökülen en uzun nehir hangisidir?", c: "Kızılırmak (1355 km)" },
+      { s: "Türkiye'de üzerinde deniz ulaşımı ve taşımacılığı yapılabilen tek akarsu hangisidir?", c: "Bartın Çayı" },
+      { s: "Türkiye'nin akış hızı ve debisi en yüksek rafting nehirlerinden biri olan Çoruh Nehri nereye dökülür?", c: "Gürcistan (Batum) üzerinden Karadeniz'e" },
+      { s: "Türkiye'de 4 farklı coğrafi bölgeden geçen tek akarsu hangisidir?", c: "Sakarya Nehri" },
+      { s: "Yeşilırmak Nehri'nin en büyük kolu hangisidir?", c: "Kelkit Çayı" },
+    ]
+  },
+  {
+    id: 'Akdeniz Akarsuları', tip: 'akarsu', renk: '#0284c7',
+    kodlama: 'Seyhan ve Ceyhan (Çukurova\'yı oluşturur), Göksu (Taşeli\'ni yarar, Mavi Tünel), Manavgat (Karstik Dumanlı kaynağıyla yıl boyu en düzenli rejim), Düden, Aksu, Dalaman, Asi (Lübnan\'dan doğar, ters akar).',
+    facts: [
+      { s: "Gür karstik kaynaklarla beslendiği için Akdeniz iklimine rağmen rejimi en düzenli olan akarsulardan biri hangisidir?", c: "Manavgat Çayı" },
+      { s: "Lübnan Bekaa Vadisi'nden doğup güneyden kuzeye akarak Hatay'dan denize dökülen ters akışlı nehir hangisidir?", c: "Asi Nehri" },
+      { s: "Mavi Tünel projesi ile suları Konya Ovası'na (KOP) aktarılan Toros nehri hangisidir?", c: "Göksu Nehri" },
+      { s: "Türkiye'nin en büyük delta ovası olan Çukurova'yı hangi iki akarsu oluşturmuştur?", c: "Seyhan ve Ceyhan nehirleri" },
+    ]
+  },
+  {
+    id: 'Ege ve Marmara Akarsuları', tip: 'akarsu', renk: '#0369a1',
+    kodlama: 'Meriç (Bulgaristan\'dan doğar, sınır çizer, taşkın yapar), Bakırçay, Gediz, Küçük Menderes, Büyük Menderes (En fazla menderes çizen ve en uzun Ege nehri), Susurluk (Marmara havzasının en büyüğü).',
+    facts: [
+      { s: "Bulgaristan'dan doğup Türkiye-Yunanistan sınırının bir kısmını oluşturan nehir hangisidir?", c: "Meriç Nehri" },
+      { s: "Ege Bölgesi'nde grabenler içinde kıvrımlar yaparak en fazla menderes çizen nehir hangisidir?", c: "Büyük Menderes" },
+      { s: "Marmara Denizi'ne dökülen en büyük akarsu hangisidir?", c: "Susurluk Çayı" },
+      { s: "Ege akarsularının hidroelektrik enerji potansiyeli neden düşüktür?", c: "Yatak eğimleri az ve taban seviyesine yakın aktıkları için" },
+    ]
+  },
+  {
+    id: 'Basra ve Hazar Akarsuları', tip: 'akarsu', renk: '#075985',
+    kodlama: 'Basra\'ya gidenler (Açık Havza): Fırat (En yüksek su miktarı ve enerji - Keban, Atatürk barajları), Dicle (Ilısu Barajı), Zap Suyu. Hazar\'a gidenler (Kapalı Havza): Aras (Sınır çizer), Kura.',
+    facts: [
+      { s: "Türkiye'nin su taşıma kapasitesi ve hidroelektrik enerji potansiyeli en yüksek nehri hangisidir?", c: "Fırat Nehri" },
+      { s: "Fırat ve Dicle nehirleri nerede birleşerek Basra Körfezi'ne dökülür?", c: "Şattülarap bölgesinde" },
+      { s: "Türkiye'den doğup Ermenistan, Azerbaycan ve İran ile doğal sınır oluşturan akarsu hangisidir?", c: "Aras Nehri" },
+      { s: "Aras ve Kura nehirleri hangi kapalı havzaya dökülür?", c: "Hazar Denizi Kapalı Havzası" },
+      { s: "Hakkari Cilo Dağları'ndan doğup sınır ötesinde Dicle'ye katılan hırçın akarsu hangisidir?", c: "Zap Suyu" },
+    ]
+  },
+  // ── Geçitler ────────────────────────────────────────────────────────────
+  {
+    id: 'Karadeniz Geçitleri', tip: 'gecit', renk: '#f59e0b',
+    kodlama: 'Şifre: ZİK-O-E / Karadeniz Kapıları ➔ Zigana (Kalkanlı / Trabzon-Gümüşhane), Kop (Bayburt-Erzurum), Ovit (Rize-Erzurum), Ilgaz (Kastamonu-Çankırı), Ecevit (İnebolu-Kastamonu), Cankurtaran (Hopa-Borçka).',
+    facts: [
+      { s: "Trabzon limanını Gümüşhane üzerinden İç ve Doğu Anadolu'ya bağlayan tarihi İpek Yolu geçidi hangisidir?", c: "Zigana (Kalkanlı) Geçidi" },
+      { s: "Rize ile Erzurum arasında yer alan ve üzerinde Türkiye'nin en uzun tünellerinden birinin bulunduğu geçit hangisidir?", c: "Ovit Geçidi" },
+      { s: "Bayburt'u Erzurum'a ve İran transit ticaret yoluna bağlayan Karadeniz geçidi hangisidir?", c: "Kop Geçidi" },
+      { s: "Kastamonu'yu Çankırı ve İç Anadolu'ya bağlayan geçit hangisidir?", c: "Ilgaz Geçidi" },
+      { s: "Kurtuluş Savaşı'nda silah taşınan tarihi İstiklal Yolu üzerindeki İnebolu-Kastamonu geçidi hangisidir?", c: "Ecevit Geçidi" },
+    ]
+  },
+  {
+    id: 'Akdeniz Geçitleri', tip: 'gecit', renk: '#d97706',
+    kodlama: 'Şifre: ÇOK SAYIDA GÜLEK BELEN / Ç-S-G-B ➔ Çubuk (Antalya-Burdur), Sertavul (Mersin/Silifke-Karaman), Gülek (Adana-İç Anadolu/Pozantı - En işlek), Belen (İskenderun-Hatay/Amik).',
+    facts: [
+      { s: "Adana ve Çukurova'yı Pozantı üzerinden İç Anadolu'ya bağlayan en işlek Toros geçidi hangisidir?", c: "Gülek Boğazı (Kilikya Kapısı)" },
+      { s: "Antalya'yı Burdur ve Göller Yöresi'ne bağlayan Akdeniz geçidi hangisidir?", c: "Çubuk Boğazı" },
+      { s: "Silifke ve Mersin'i Karaman ve Konya düzlüklerine bağlayan geçit hangisidir?", c: "Sertavul Geçidi" },
+      { s: "İskenderun Limanı'nı Amanos Dağları üzerinden Antakya ve Suriye kapısına bağlayan geçit hangisidir?", c: "Belen Geçidi" },
     ]
   },
 ];

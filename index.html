@@ -18,60 +18,113 @@
      MENU SCREEN
 ════════════════════════════════════════════ -->
 <div id="screen-menu" class="screen active">
-  <div class="menu-header">
-    <div class="menu-top-tools">
-      <button id="menu-sound-btn" class="tool-icon-btn" title="Ses Aç/Kapat">🔊</button>
-      <button id="menu-badges-btn" class="tool-icon-btn" title="Başarılar & Rozetler">🏆</button>
-      <button id="menu-mnemonics-btn" class="tool-icon-btn" title="Hafıza Şifreleri">💡</button>
-    </div>
-    <div class="menu-logo">🗺️</div>
-    <h1>Türkiye Ezber</h1>
-    <p class="menu-subtitle">Dağlar &amp; Göller — Harita Quizi</p>
-    
-    <div class="mastery-banner">
-      <div class="mastery-banner-header">
-        <span>🏆 Genel İlerleme & Ustalık</span>
-        <strong id="menu-mastery-text">%0</strong>
+  <div class="menu-header-wrap">
+    <div class="menu-header">
+      <div class="menu-header-top">
+        <div class="menu-brand">
+          <span class="menu-logo">🗺️</span>
+          <div class="menu-brand-text">
+            <h1>Türkiye Ezber</h1>
+            <p class="menu-subtitle">KPSS &amp; YKS Coğrafya — Harita Sınav Platformu</p>
+          </div>
+        </div>
+        <div class="menu-top-tools">
+          <button id="menu-daily-btn" class="tool-icon-btn" title="Günün KPSS Sınavı (5 Soru)">📅</button>
+          <button id="menu-pdf-btn" class="tool-icon-btn" title="KPSS Harita Notu &amp; Atlas İndir (PDF)">📑</button>
+          <button id="menu-sound-btn" class="tool-icon-btn" title="Ses Aç/Kapat">🔊</button>
+          <button id="menu-badges-btn" class="tool-icon-btn" title="Başarılar &amp; Rozetler">🏆</button>
+          <button id="menu-mnemonics-btn" class="tool-icon-btn" title="Hafıza Şifreleri">💡</button>
+        </div>
       </div>
-      <div class="mastery-progress-track">
-        <div id="menu-mastery-fill" class="mastery-progress-fill" style="width:0%"></div>
+      
+      <div class="mastery-banner">
+        <div class="mastery-banner-header">
+          <span>🏆 Genel İlerleme &amp; Ustalık</span>
+          <strong id="menu-mastery-text">%0</strong>
+        </div>
+        <div class="mastery-progress-track">
+          <div id="menu-mastery-fill" class="mastery-progress-fill" style="width:0%"></div>
+        </div>
       </div>
     </div>
   </div>
   <div class="menu-body">
-    <section class="menu-section">
-      <h3>Konu</h3>
-      <div class="btn-group">
-        <button class="mode-btn active" data-mode="mountains">⛰️ Dağlar</button>
-        <button class="mode-btn"        data-mode="lakes">💧 Göller</button>
-        <button class="mode-btn"        data-mode="mixed">🌍 Karışık</button>
+    <div class="menu-layout-grid">
+      <!-- Left Column: Study Configuration -->
+      <div class="menu-col-config">
+        <section class="menu-section card-box">
+          <h3>Konu</h3>
+          <div class="btn-group">
+            <button class="mode-btn active" data-mode="mountains">⛰️ Dağlar</button>
+            <button class="mode-btn"        data-mode="lakes">💧 Göller</button>
+            <button class="mode-btn"        data-mode="ovalar">🌾 Ovalar</button>
+            <button class="mode-btn"        data-mode="platolar">🏞️ Platolar</button>
+            <button class="mode-btn"        data-mode="akarsular">🌊 Akarsular</button>
+            <button class="mode-btn"        data-mode="gecitler">🚪 Geçitler</button>
+            <button class="mode-btn"        data-mode="mixed">🌍 Karışık</button>
+          </div>
+        </section>
+        <section class="menu-section card-box">
+          <h3>Kategori <span id="item-count" class="item-count"></span></h3>
+          <div id="category-container" class="category-container"></div>
+        </section>
+        <section class="menu-section card-box">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <h3>Soru Tipi</h3>
+            <button id="timer-toggle-btn" class="timer-toggle-btn" title="Soru başına 15 saniye">⏱️ Süreye Karşı: <b>KAPALI</b></button>
+          </div>
+          <div class="btn-group">
+            <button class="qtype-btn"        data-qtype="name-to-loc">📍 İsimden Konuma</button>
+            <button class="qtype-btn"        data-qtype="loc-to-name">🔤 Konumdan İsme</button>
+            <button class="qtype-btn"        data-qtype="osym">🏛️ ÖSYM Formatı</button>
+            <button class="qtype-btn active" data-qtype="mixed">🎲 Karışık</button>
+          </div>
+        </section>
       </div>
-    </section>
-    <section class="menu-section">
-      <h3>Kategori <span id="item-count" class="item-count"></span></h3>
-      <div id="category-container" class="category-container"></div>
-    </section>
-    <section class="menu-section">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <h3>Soru Tipi</h3>
-        <button id="timer-toggle-btn" class="timer-toggle-btn" title="Soru başına 15 saniye">⏱️ Süreye Karşı: <b>KAPALI</b></button>
+
+      <!-- Right Column: Actions & Tools -->
+      <div class="menu-col-actions">
+        <div class="menu-section-header-desktop">
+          <h3>🎮 Oyun Modunu Seçin</h3>
+        </div>
+        <div class="main-action-buttons">
+          <button id="start-btn" class="action-card-btn btn-action-start">
+            <span class="action-card-icon">▶️</span>
+            <span class="action-card-text">
+              <strong class="action-card-title">Pratiğe Başla</strong>
+              <small class="action-card-sub">Klasik Harita Testi</small>
+            </span>
+          </button>
+          <button id="osym-btn" class="action-card-btn btn-action-osym">
+            <span class="action-card-icon">🏛️</span>
+            <span class="action-card-text">
+              <strong class="action-card-title">ÖSYM Formatı</strong>
+              <small class="action-card-sub">I-II-III-IV-V Soruları</small>
+            </span>
+          </button>
+          <button id="blitz-btn" class="action-card-btn btn-action-blitz">
+            <span class="action-card-icon blitz-pulse-icon">⚡</span>
+            <span class="action-card-text">
+              <strong class="action-card-title">Harita Fırtınası</strong>
+              <small id="blitz-high-badge" class="action-card-sub">⚡ 60 Saniye</small>
+            </span>
+          </button>
+          <button id="explore-btn" class="action-card-btn btn-action-explore">
+            <span class="action-card-icon">🗺️</span>
+            <span class="action-card-text">
+              <strong class="action-card-title">Haritayı İncele</strong>
+              <small class="action-card-sub">Serbest Keşif Modu</small>
+            </span>
+          </button>
+        </div>
+        <div class="secondary-action-buttons">
+          <button id="flashcard-btn" class="btn btn-success btn-lg hidden">🃏 Bilgi Kartları</button>
+          <button id="mistakes-btn" class="btn btn-danger-outline btn-lg hidden">🎯 Yanıldıklarımı Sor (<span id="mistakes-badge">0</span>)</button>
+        </div>
+        <div class="menu-actions">
+          <button id="reset-btn" class="btn btn-danger-outline">🗑️ İlerlemeyi Sıfırla</button>
+        </div>
       </div>
-      <div class="btn-group">
-        <button class="qtype-btn"        data-qtype="name-to-loc">📍 İsimden Konuma</button>
-        <button class="qtype-btn"        data-qtype="loc-to-name">🔤 Konumdan İsme</button>
-        <button class="qtype-btn active" data-qtype="mixed">🎲 Karışık</button>
-      </div>
-    </section>
-    <div class="main-action-buttons">
-      <button id="start-btn" class="btn btn-primary btn-xl">▶ Pratiğe Başla</button>
-      <button id="explore-btn" class="btn btn-secondary btn-xl">🗺️ Haritayı İncele</button>
-    </div>
-    <div class="secondary-action-buttons">
-      <button id="flashcard-btn" class="btn btn-success btn-lg hidden">🃏 Bilgi Kartları</button>
-      <button id="mistakes-btn" class="btn btn-danger-outline btn-lg hidden">🎯 Yanıldıklarımı Sor (<span id="mistakes-badge">0</span>)</button>
-    </div>
-    <div class="menu-actions">
-      <button id="reset-btn" class="btn btn-danger-outline">🗑️ İlerlemeyi Sıfırla</button>
     </div>
   </div>
 </div>
@@ -173,7 +226,15 @@
 ════════════════════════════════════════════ -->
 <div id="screen-results" class="screen">
   <div class="results-card">
-    <h2>🏁 Tur Sona Erdi</h2>
+    <h2 id="res-title">🏁 Tur Sona Erdi</h2>
+
+    <!-- Blitz score banner (shown in blitz mode) -->
+    <div id="res-blitz-banner" class="res-blitz-banner hidden">
+      <div class="blitz-banner-title">⚡ HARİTA FIRTINASI SKORU</div>
+      <div id="res-blitz-score" class="blitz-banner-pts">0</div>
+      <div id="res-blitz-record-tag" class="blitz-banner-record hidden">🏆 YENİ KİŞİSEL REKOR!</div>
+    </div>
+
     <div class="results-score-grid">
       <div class="result-box correct">
         <div class="result-num" id="res-correct">0</div>
@@ -191,6 +252,7 @@
     <div id="res-worst" class="results-worst"></div>
     <div id="res-streak-banner" class="res-streak-banner"></div>
     <div class="results-actions">
+      <button id="res-share-btn" class="btn btn-share btn-lg">📤 Başarı Kartını Paylaş</button>
       <button id="res-again-btn" class="btn btn-primary">↺ Tekrar</button>
       <button id="res-menu-btn"  class="btn btn-outline">☰ Menü</button>
       <button id="res-badges-btn" class="btn btn-secondary">🏆 Rozetler</button>
@@ -269,6 +331,29 @@
     </div>
     <p class="modal-subtitle">Dağlar ve Göller için en popüler akrostiş ve kodlamalar</p>
     <div id="mnemonics-list" class="mnemonics-list"></div>
+  </div>
+</div>
+<!-- ══════════════════════════════════════════
+     MODAL: SKOR KARTI PAYLAŞ
+════════════════════════════════════════════ -->
+<div id="modal-share" class="modal-overlay hidden">
+  <div class="modal-card modal-share-card">
+    <div class="modal-header-row">
+      <h3>🏆 Başarı Kartınız Hazır!</h3>
+      <button id="modal-share-close" class="btn-icon">✕</button>
+    </div>
+    <p class="modal-subtitle">Kartınızı doğrudan paylaşabilir veya resim olarak telefonunuza indirebilirsiniz.</p>
+    
+    <div class="share-preview-wrap">
+      <canvas id="share-canvas" width="1080" height="1080" style="display:none;"></canvas>
+      <img id="share-img-preview" alt="Başarı Kartı" class="share-img-preview">
+    </div>
+
+    <div class="share-actions-row">
+      <button id="btn-native-share" class="btn btn-share btn-lg">📲 Doğrudan Paylaş (WhatsApp / Hikaye)</button>
+      <button id="btn-download-card" class="btn btn-primary btn-lg">📥 Görseli İndir (.PNG)</button>
+    </div>
+    <button id="btn-copy-link" class="btn btn-secondary btn-sm" style="margin-top:10px;width:100%">🔗 Uygulama Linkini Kopyala</button>
   </div>
 </div>
 

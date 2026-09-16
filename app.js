@@ -12,6 +12,8 @@ const LS_PROG       = 'trk-progress';
 const LS_CAL        = 'trk-calibration';
 const LS_BADGES     = 'trk-badges';
 const LS_SOUND      = 'trk-sound';
+const LS_TTS        = 'trk-tts';
+const LS_BLITZ_HIGH = 'trk-blitz-high';
 
 // ── State ─────────────────────────────────────────────────────────────────
 const S = {
@@ -19,12 +21,21 @@ const S = {
   screenMode: 'menu',
   timedMode: false,
   isMistakesMode: false,
+  isBlitz: false,
+  isDaily: false,
   activeItems: [], queue: [],
   currentItem: null, currentQType: null, isAnswered: false,
   sessionStats: { correct: 0, wrong: 0, wrongItems: {}, bestStreak: 0 },
   streak: 0,
   timerId: null, timeLeft: QUESTION_TIME,
   calTarget: null,
+  osymData: null,
+  // blitz mode
+  blitzScore: 0,
+  blitzTimeLeft: 60,
+  blitzTimerId: null,
+  blitzHighScore: 0,
+  lastAnswerTime: 0,
   // explore mode
   exploreCat: null,
   exploreSelectedId: null,
@@ -155,6 +166,46 @@ function updateSoundUI() {
   if (quizBtn) quizBtn.textContent = icon;
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+//  TEXT-TO-SPEECH (TTS) SES MOTORU
+// ─────────────────────────────────────────────────────────────────────────
+const SpeechEngine = {
+  enabled: localStorage.getItem(LS_TTS) === 'true',
+  toggle() {
+    this.enabled = !this.enabled;
+    localStorage.setItem(LS_TTS, this.enabled ? 'true' : 'false');
+    updateTTSUI();
+    if (this.enabled) {
+      this.speak('Sesli soru okuma açıldı.');
+    } else {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    }
+  },
+  speak(rawText) {
+    if (!this.enabled || !('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const clean = String(rawText || '')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/[•*_~"']/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!clean) return;
+      const utt = new SpeechSynthesisUtterance(clean);
+      utt.lang = 'tr-TR';
+      utt.rate = 1.0;
+      utt.pitch = 1.0;
+      window.speechSynthesis.speak(utt);
+    } catch (_) {}
+  }
+};
+
+function updateTTSUI() {
+  const icon = SpeechEngine.enabled ? '🗣️' : '🤐';
+  const quizBtn = $('btn-tts-toggle');
+  if (quizBtn) quizBtn.textContent = icon;
+}
+
 function triggerHaptic(ok) {
   try {
     if (navigator.vibrate) {
@@ -174,10 +225,18 @@ const BADGES_DEF = [
   { id: 'streak_10',   icon: '👑', title: 'Durdurulamaz',     desc: 'Üst üste 10 doğru cevap ver' },
   { id: 'toroslar',    icon: '⛰️', title: 'Dağlar Kurdu',      desc: 'Dağlar testinde en az %80 başarı göster' },
   { id: 'goller',      icon: '💧', title: 'Göller Kaşifi',     desc: 'Göller testinde en az %80 başarı göster' },
+  { id: 'ovalar',      icon: '🌾', title: 'Ova Fatihi',        desc: 'Ovalar testinde en az %80 başarı göster' },
+  { id: 'platolar',    icon: '🏞️', title: 'Yayla & Plato Ustası', desc: 'Platolar testinde en az %80 başarı göster' },
+  { id: 'akarsu_ustasi',icon: '🌊', title: 'Akarsu Kurdu',      desc: 'Akarsular testinde en az %80 başarı göster' },
+  { id: 'gecit_rehberi',icon: '🚪', title: 'Geçitler Rehberi',  desc: 'Geçitler testinde en az %80 başarı göster' },
+  { id: 'gunun_fatihi',icon: '📅', title: 'Günün Fatihi',      desc: 'Günün KPSS Harita Görevini başarıyla tamamla' },
   { id: 'kart_ustasi', icon: '🃏', title: 'Kart Dehası',       desc: 'Bir Bilgi Kartları turunu tamamla' },
   { id: 'hizli_tur',   icon: '⏱️', title: 'Hız Canavarı',     desc: 'Süreye karşı modda bir tur tamamla' },
   { id: 'kesifci',     icon: '🗺️', title: 'Meraklı Kâşif',    desc: 'Haritayı İncele modunda 5 farklı noktayı incele' },
   { id: 'kusursuz',    icon: '🌟', title: 'Kusursuz Tur',     desc: 'En az 8 soruluk bir testi %100 doğrulukla bitir' },
+  { id: 'blitz_first', icon: '⚡', title: 'Fırtına Başlangıcı', desc: 'İlk 60 sn Harita Fırtınası turunu tamamla' },
+  { id: 'blitz_1000',  icon: '🏎️', title: 'Hız Şampiyonu',     desc: 'Harita Fırtınasında 1.000 puanı aş' },
+  { id: 'blitz_2000',  icon: '👑', title: 'Efsane Refleks',    desc: 'Harita Fırtınasında 2.000 puan yaparak rekor kır' },
 ];
 
 function loadBadges() {
@@ -489,6 +548,7 @@ window.addEventListener('DOMContentLoaded', () => {
   buildMenu();
   bindMenuEvents();
   bindResultsEvents();
+  bindShareModalEvents();
   bindMapGestures();
   bindMapClickEvents();
   updateSoundUI();
@@ -502,6 +562,17 @@ function buildMenu() {
   renderCategoryChips();
   updateItemCount();
   updateMasteryUI();
+  updateBlitzBadge();
+}
+
+function updateBlitzBadge() {
+  S.blitzHighScore = parseInt(localStorage.getItem(LS_BLITZ_HIGH) || '0', 10);
+  const badge = $('blitz-high-badge');
+  if (badge) {
+    badge.textContent = S.blitzHighScore > 0
+      ? `👑 Rekor: ${S.blitzHighScore} Puan`
+      : '⚡ 60 Saniye';
+  }
 }
 
 function bindMenuEvents() {
@@ -539,6 +610,8 @@ function bindMenuEvents() {
 
   // Action Buttons
   $('start-btn')?.addEventListener('click', () => startQuiz(false));
+  $('osym-btn')?.addEventListener('click', () => startOsymMode());
+  $('blitz-btn')?.addEventListener('click', () => startBlitzMode());
   $('explore-btn')?.addEventListener('click', () => enterExploreMode());
   $('mistakes-btn')?.addEventListener('click', () => startQuiz(true));
 
@@ -556,6 +629,8 @@ function bindMenuEvents() {
   $('modal-badges-close')?.addEventListener('click', () => $('modal-badges').classList.add('hidden'));
   $('menu-mnemonics-btn')?.addEventListener('click', () => openMnemonicsModal());
   $('modal-mnemonics-close')?.addEventListener('click', () => $('modal-mnemonics').classList.add('hidden'));
+  $('menu-daily-btn')?.addEventListener('click', startDailyChallenge);
+  $('menu-pdf-btn')?.addEventListener('click', exportStudyAtlasPDF);
 
   // Bilgi Kartları modal
   const fcBtn = $('flashcard-btn');
@@ -579,7 +654,12 @@ function renderCategoryChips() {
   c.innerHTML = '';
   const cats = ALL_KATEGORILER.filter(k =>
     S.mode === 'mixed'     ? true :
-    S.mode === 'mountains' ? k.tip === 'dag' : k.tip === 'gol'
+    S.mode === 'mountains' ? k.tip === 'dag' :
+    S.mode === 'ovalar'    ? k.tip === 'ova' :
+    S.mode === 'platolar'  ? k.tip === 'plato' :
+    S.mode === 'akarsular' ? k.tip === 'akarsu' :
+    S.mode === 'gecitler'  ? k.tip === 'gecit' :
+    k.tip === 'gol'
   );
 
   addChip(c, 'Hepsi', '#7f8c8d', null, S.category === null, () => {
@@ -613,7 +693,12 @@ function addChip(parent, label, color, masteryPct, active, onClick) {
 function getActiveItems() {
   return ALL_ITEMS.filter(item => {
     const tipOk  = S.mode === 'mixed'     ? true :
-                   S.mode === 'mountains' ? item.tip === 'dag' : item.tip === 'gol';
+                   S.mode === 'mountains' ? item.tip === 'dag' :
+                   S.mode === 'ovalar'    ? item.tip === 'ova' :
+                   S.mode === 'platolar'  ? item.tip === 'plato' :
+                   S.mode === 'akarsular' ? item.tip === 'akarsu' :
+                   S.mode === 'gecitler'  ? item.tip === 'gecit' :
+                   item.tip === 'gol';
     const catOk  = !S.category || item.kategori === S.category;
     return tipOk && catOk;
   });
@@ -622,9 +707,8 @@ function getActiveItems() {
 function updateItemCount() {
   $('item-count').textContent = `(${getActiveItems().length} öğe)`;
 
-  const isLakeCat  = S.category ? (ALL_KATEGORILER.find(k => k.id === S.category)?.tip === 'gol') : false;
-  const isLakesAll = (S.mode === 'lakes' && S.category === null);
-  const showFC     = isLakeCat || isLakesAll;
+  const facts = getActiveFacts();
+  const showFC = facts && facts.length > 0;
 
   const fcBtn = $('flashcard-btn');
   if (fcBtn) {
@@ -654,9 +738,11 @@ function startQuiz(isMistakesMode = false) {
     S.queue = shuffle(mistakesPool);
   } else {
     S.isMistakesMode = false;
-    S.queue = buildQueue(calibrated);
+  S.queue = buildQueue(calibrated);
   }
 
+  S.isBlitz      = false;
+  S.isDaily      = false;
   S.activeItems  = calibrated;
   S.screenMode   = 'quiz';
   S.sessionStats = { correct: 0, wrong: 0, wrongItems: {}, bestStreak: 0 };
@@ -664,6 +750,7 @@ function startQuiz(isMistakesMode = false) {
   S.isAnswered   = false;
   S.calTarget    = null;
   hideDisambiguationBubble();
+  $('res-blitz-banner')?.classList.add('hidden');
 
   showScreen('screen-main');
   resetMapTransform();
@@ -729,7 +816,9 @@ function handleTimeOut() {
 
   recordAnswer(S.currentItem, false);
 
-  if (S.currentQType === 'name-to-loc') {
+  if (S.currentQType === 'osym') {
+    handleOsymTimeout();
+  } else if (S.currentQType === 'name-to-loc') {
     enableMapClick(false);
     addPin(S.currentItem.x, S.currentItem.y, null, '#27ae60', 20);
     appendFeedback(false, S.currentItem, true);
@@ -755,8 +844,20 @@ function nextQuestion() {
   if (!item) { endSession(); return; }
 
   S.currentItem  = item;
-  S.currentQType = S.qtype === 'mixed'
-    ? (Math.random() < 0.5 ? 'name-to-loc' : 'loc-to-name') : S.qtype;
+  if (S.qtype === 'osym') {
+    S.currentQType = 'osym';
+  } else if (S.qtype === 'mixed') {
+    const r = Math.random();
+    if (r < 0.33) {
+      S.currentQType = 'osym';
+    } else if (r < 0.66) {
+      S.currentQType = 'name-to-loc';
+    } else {
+      S.currentQType = 'loc-to-name';
+    }
+  } else {
+    S.currentQType = S.qtype;
+  }
   S.isAnswered   = false;
 
   switchMapImage(item.kategori);
@@ -773,7 +874,21 @@ function nextQuestion() {
 function renderQuizHeader() {
   const done  = S.sessionStats.correct + S.sessionStats.wrong;
   const total = done + S.queue.length + 1;
-  const cat   = S.isMistakesMode ? '🎯 Yanıldıklarım' : (S.category || (S.mode==='mountains'?'Dağlar':S.mode==='lakes'?'Göller':'Karışık'));
+  const cat   = S.isDaily
+    ? '📅 Günün KPSS Sınavı'
+    : (S.isMistakesMode
+        ? '🎯 Yanıldıklarım'
+        : (S.currentQType === 'osym' || S.qtype === 'osym'
+            ? '🏛️ ÖSYM Soru Formatı'
+            : (S.category || (
+                S.mode==='mountains'?'Dağlar':
+                S.mode==='lakes'?'Göller':
+                S.mode==='ovalar'?'Ovalar':
+                S.mode==='platolar'?'Platolar':
+                S.mode==='akarsular'?'Akarsular':
+                S.mode==='gecitler'?'Geçitler':
+                'Karışık'
+              ))));
   const streakHtml = S.streak >= 2
     ? `<div class="tbar-streak"><span class="streak-flame">🔥</span> ${S.streak} Seri!</div>`
     : '';
@@ -790,6 +905,7 @@ function renderQuizHeader() {
       <span class="score-w">✗ ${S.sessionStats.wrong}</span>
     </div>
     <button class="btn-icon" id="btn-sound-toggle" title="Sesi Aç/Kapat">${Sound.enabled ? '🔊' : '🔇'}</button>
+    <button class="btn-icon" id="btn-tts-toggle" title="Sesli Soru Okuma">${SpeechEngine.enabled ? '🗣️' : '🤐'}</button>
     <button class="btn-icon" id="btn-hint-mnemonic" title="Hafıza İpucu">💡</button>`;
 
   $('quiz-back')?.addEventListener('click', () => {
@@ -799,6 +915,7 @@ function renderQuizHeader() {
     }
   });
   $('btn-sound-toggle')?.addEventListener('click', () => Sound.toggle());
+  $('btn-tts-toggle')?.addEventListener('click', () => SpeechEngine.toggle());
   $('btn-hint-mnemonic')?.addEventListener('click', () => {
     const cat = ALL_KATEGORILER.find(k => k.id === S.currentItem.kategori);
     if (cat && cat.kodlama) {
@@ -815,7 +932,15 @@ function renderQuestion() {
   const item  = S.currentItem;
   const color = CAT_COLOR[item.kategori] || '#3498db';
 
-  if (S.currentQType === 'name-to-loc') {
+  const tipName = item.tip === 'dag' ? 'dağ' :
+                  item.tip === 'ova' ? 'ova' :
+                  item.tip === 'plato' ? 'plato' :
+                  item.tip === 'akarsu' ? 'akarsu' :
+                  item.tip === 'gecit' ? 'dağ geçidi' : 'göl';
+
+  if (S.currentQType === 'osym') {
+    renderOsymQuestion(item);
+  } else if (S.currentQType === 'name-to-loc') {
     $('top-panel').innerHTML = `
       <div class="question-prompt">
         <div class="q-hint">Haritada tıklayın / dokunun</div>
@@ -827,17 +952,28 @@ function renderQuestion() {
       <div style="padding:8px 14px;font-size:11px;color:#7f8c8d;text-align:center">
         Tolerans ±${TOLERANCE}% &nbsp;·&nbsp; Pinch ile zoom &nbsp;·&nbsp; Çift tık = sıfırla
       </div>`;
+    if (SpeechEngine.enabled) {
+      SpeechEngine.speak(`${item.isim}. Haritada nerede?`);
+    }
   } else {
     addPin(item.x, item.y, '?', '#f39c12', 20, true);
     renderChoices(item);
+    if (SpeechEngine.enabled) {
+      SpeechEngine.speak(`İşaretli yer hangi ${tipName}?`);
+    }
   }
 }
 
 function renderChoices(correct) {
   const options = buildChoices(correct);
   const wrap    = el('div', 'choices-wrap');
+  const tipName = correct.tip === 'dag' ? 'dağ' :
+                  correct.tip === 'ova' ? 'ova' :
+                  correct.tip === 'plato' ? 'plato' :
+                  correct.tip === 'akarsu' ? 'akarsu' :
+                  correct.tip === 'gecit' ? 'dağ geçidi' : 'göl';
   wrap.appendChild(el('div', 'choices-hint',
-    `Bu konum hangi ${correct.tip==='dag'?'dağ':'göl'}dür?`));
+    `Bu konum hangi ${tipName}dır/dir?`));
   const grid = el('div', 'choices-grid');
   options.forEach(opt => {
     const btn = el('button', 'choice-btn', esc(opt.isim));
@@ -859,6 +995,446 @@ function buildChoices(correct) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+//  ÖSYM QUESTION FORMAT (I - II - III - IV - V)
+// ─────────────────────────────────────────────────────────────────────────
+function startOsymMode() {
+  document.querySelectorAll('.qtype-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.qtype === 'osym');
+  });
+  S.qtype = 'osym';
+  Sound.playTone(550, 0.06, 'sine', 0.1);
+  startQuiz(false);
+}
+
+function sanitizeNoteForOsym(note, itemName) {
+  if (!note) return '';
+  let s = note;
+  const words = itemName.split(/\s+/).filter(w => w.length > 2);
+  words.forEach(w => {
+    const escaped = w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(escaped, 'gi');
+    s = s.replace(re, '___');
+  });
+  return s;
+}
+
+function buildOsymQuestionData(target) {
+  const mapImg = CAT_TO_IMAGE[target.kategori];
+  const mapPool = ALL_ITEMS.filter(i =>
+    CAT_TO_IMAGE[i.kategori] === mapImg &&
+    i.x !== null && i.y !== null
+  );
+
+  const optCount = Math.min(5, mapPool.length);
+  const distractorsNeeded = Math.max(1, optCount - 1);
+
+  let archetype = 'id'; // 'formation' | 'feature' | 'id'
+  let stemHtml = '';
+  let badgeSub = 'Harita Sorusu';
+  let distractorPool = mapPool.filter(i => i.id !== target.id);
+
+  const isMountains = (target.tip === 'dag');
+  const isOva       = (target.tip === 'ova');
+  const isPlato     = (target.tip === 'plato');
+  const isAkarsu    = (target.tip === 'akarsu');
+  const isGecit     = (target.tip === 'gecit');
+
+  if (isMountains) {
+    const isVolcanic = (target.kategori === 'Volkanik Dağlar');
+    const isFaulted  = (target.kategori === 'Kırıklı Dağlar');
+    const isFolded   = (target.kategori === 'Kıvrımlı Dağlar');
+
+    const rand = Math.random();
+    if (rand < 0.42) {
+      if (isVolcanic) {
+        archetype = 'formation';
+        badgeSub = 'Jeolojik Oluşum (Volkanizma)';
+        stemHtml = `
+          <div class="osym-q-intro">Aşağıdaki Türkiye haritasında numaralandırılarak ${optCount} alan gösterilmiştir.</div>
+          <div class="osym-q-stem">Bu alanların hangisinde <b>volkanik faaliyetler (magmatizma)</b> sonucu oluşmuş bir dağ yer almaktadır?</div>
+        `;
+        const nonVolcanic = distractorPool.filter(i => i.kategori !== 'Volkanik Dağlar');
+        if (nonVolcanic.length >= distractorsNeeded) {
+          distractorPool = nonVolcanic;
+        }
+      } else if (isFaulted) {
+        archetype = 'formation';
+        badgeSub = 'Jeolojik Oluşum (Horst / Kırılma)';
+        stemHtml = `
+          <div class="osym-q-intro">Aşağıdaki Türkiye haritasında numaralandırılarak ${optCount} alan gösterilmiştir.</div>
+          <div class="osym-q-stem">Bu alanların hangisinde <b>faylanma ve kırılma hareketleri (horst)</b> sonucu oluşmuş bir dağ yer almaktadır?</div>
+        `;
+        const nonFaulted = distractorPool.filter(i => i.kategori !== 'Kırıklı Dağlar');
+        if (nonFaulted.length >= distractorsNeeded) {
+          distractorPool = nonFaulted;
+        }
+      } else if (isFolded && Math.random() < 0.5) {
+        archetype = 'formation';
+        badgeSub = 'Jeolojik Oluşum (Orojenez / Kıvrılma)';
+        stemHtml = `
+          <div class="osym-q-intro">Aşağıdaki Türkiye haritasında numaralandırılarak ${optCount} alan gösterilmiştir.</div>
+          <div class="osym-q-stem">Bu alanların hangisinde <b>orojenez (levha sıkışması ve kıvrılma)</b> sonucu oluşmuş bir dağ yer almaktadır?</div>
+        `;
+        const others = distractorPool.filter(i => i.kategori !== 'Kıvrımlı Dağlar');
+        if (others.length >= 2) {
+          distractorPool = shuffle([...others, ...distractorPool]);
+        }
+      }
+    }
+  } else if (isOva && Math.random() < 0.42) {
+    if (target.kategori === 'Delta Ovaları') {
+      archetype = 'formation';
+      badgeSub = 'Jeomorfolojik Oluşum (Delta)';
+      stemHtml = `
+        <div class="osym-q-intro">Aşağıdaki Türkiye haritasında numaralandırılarak ${optCount} alan gösterilmiştir.</div>
+        <div class="osym-q-stem">Bu alanların hangisinde akarsuların taşıdığı alüvyonları denize döküldüğü yerde biriktirmesiyle oluşan bir <b>delta ovası</b> yer almaktadır?</div>
+      `;
+      const nonDelta = distractorPool.filter(i => i.kategori !== 'Delta Ovaları');
+      if (nonDelta.length >= distractorsNeeded) distractorPool = nonDelta;
+    } else if (target.kategori === 'Karstik Ovalar (Polye)') {
+      archetype = 'formation';
+      badgeSub = 'Jeomorfolojik Oluşum (Karstik Polye)';
+      stemHtml = `
+        <div class="osym-q-intro">Aşağıdaki Türkiye haritasında numaralandırılarak ${optCount} alan gösterilmiştir.</div>
+        <div class="osym-q-stem">Bu alanların hangisinde kalker/kireçtaşı arazilerin erimesi ve karstlaşma sonucu oluşan bir <b>polye (karstik ova)</b> yer almaktadır?</div>
+      `;
+      const nonKarst = distractorPool.filter(i => i.kategori !== 'Karstik Ovalar (Polye)');
+      if (nonKarst.length >= distractorsNeeded) distractorPool = nonKarst;
+    } else if (target.kategori === 'Tektonik Ovalar') {
+      archetype = 'formation';
+      badgeSub = 'Jeomorfolojik Oluşum (Tektonizma)';
+      stemHtml = `
+        <div class="osym-q-intro">Aşağıdaki Türkiye haritasında numaralandırılarak ${optCount} alan gösterilmiştir.</div>
+        <div class="osym-q-stem">Bu alanların hangisinde fay hatları boyunca meydana gelen çökmeler sonucu oluşmuş bir <b>tektonik ova</b> yer almaktadır?</div>
+      `;
+    }
+  } else if (isPlato && Math.random() < 0.42) {
+    if (target.kategori === 'Karstik Platolar') {
+      archetype = 'formation';
+      badgeSub = 'Jeomorfolojik Oluşum (Karstik Plato)';
+      stemHtml = `
+        <div class="osym-q-intro">Aşağıdaki Türkiye haritasında numaralandırılarak ${optCount} alan gösterilmiştir.</div>
+        <div class="osym-q-stem">Bu alanların hangisinde kalkerli arazinin derin kanyonlarla yarılması sonucu oluşmuş <b>karstik bir plato</b> yer almaktadır?</div>
+      `;
+    } else if (target.kategori === 'Volkanik Platolar') {
+      archetype = 'formation';
+      badgeSub = 'Jeomorfolojik Oluşum (Lav Platosu)';
+      stemHtml = `
+        <div class="osym-q-intro">Aşağıdaki Türkiye haritasında numaralandırılarak ${optCount} alan gösterilmiştir.</div>
+        <div class="osym-q-stem">Bu alanların hangisinde lav örtülerinin akarsularca yarılmasıyla oluşan yüksek <b>volkanik bir plato</b> yer almaktadır?</div>
+      `;
+    } else if (target.kategori === 'Aşınım Platoları') {
+      archetype = 'formation';
+      badgeSub = 'Jeomorfolojik Oluşum (Peneplen)';
+      stemHtml = `
+        <div class="osym-q-intro">Aşağıdaki Türkiye haritasında numaralandırılarak ${optCount} alan gösterilmiştir.</div>
+        <div class="osym-q-stem">Bu alanların hangisinde aşınarak deniz seviyesine yaklaşmış düzlüğün sonradan yükselmesiyle oluşan bir <b>aşınım (peneplen) platosu</b> yer almaktadır?</div>
+      `;
+    } else if (target.kategori === 'Tabaka Düzlüğü Platoları') {
+      archetype = 'formation';
+      badgeSub = 'Jeomorfolojik Oluşum (Yatay Duruşlu)';
+      stemHtml = `
+        <div class="osym-q-intro">Aşağıdaki Türkiye haritasında numaralandırılarak ${optCount} alan gösterilmiştir.</div>
+        <div class="osym-q-stem">Bu alanların hangisinde yatay duruşlu tortul tabakaların derin akarsu vadileriyle yarılmasıyla oluşan bir <b>tabaka düzlüğü platosu</b> yer almaktadır?</div>
+      `;
+    }
+  } else if (isAkarsu && Math.random() < 0.45) {
+    archetype = 'formation';
+    badgeSub = 'Akarsu & Havza';
+    stemHtml = `
+      <div class="osym-q-intro">Aşağıdaki Türkiye haritasında numaralandırılarak ${optCount} alan gösterilmiştir.</div>
+      <div class="osym-q-stem">Bu alanların hangisinde <b>${esc(target.kategori)}</b> kuşağında yer alan önemli bir akarsu bulunmaktadır?</div>
+    `;
+  } else if (isGecit && Math.random() < 0.5) {
+    archetype = 'formation';
+    badgeSub = 'Ulaşım & Dağ Geçidi';
+    stemHtml = `
+      <div class="osym-q-intro">Aşağıdaki Türkiye haritasında numaralandırılarak ${optCount} alan gösterilmiştir.</div>
+      <div class="osym-q-stem">Bu alanların hangisinde kıyı kuşağı ile iç kesimler arasındaki karayolu ulaşımını sağlayan stratejik bir <b>dağ geçidi</b> yer almaktadır?</div>
+    `;
+  }
+
+  // Feature question candidate (if not formation and target has a good note)
+  if (archetype === 'id' && target.not && target.not.trim().length > 14 && Math.random() < 0.6) {
+    archetype = 'feature';
+    badgeSub = 'KPSS Soru Kalıbı';
+    const cleanNote = sanitizeNoteForOsym(target.not, target.isim);
+    const itemNoun = (target.tip === 'dag') ? 'dağ' :
+                     (target.tip === 'ova') ? 'ova' :
+                     (target.tip === 'plato') ? 'plato' :
+                     (target.tip === 'akarsu') ? 'akarsu' :
+                     (target.tip === 'gecit') ? 'dağ geçidi' : 'göl';
+    stemHtml = `
+      <div class="osym-q-intro">Aşağıdaki haritada numaralandırılarak ${optCount} alan gösterilmiştir.</div>
+      <div class="osym-q-bullet">• <i>"${esc(cleanNote)}"</i></div>
+      <div class="osym-q-stem">Yukarıda özellikleri belirtilen <b>${itemNoun}</b>, haritada numaralandırılmış alanların hangisinde yer almaktadır?</div>
+    `;
+  }
+
+  // Fallback: Direct identification question
+  if (archetype === 'id') {
+    badgeSub = 'Lokasyon Belirleme';
+    stemHtml = `
+      <div class="osym-q-intro">Aşağıdaki haritada numaralandırılarak ${optCount} alan gösterilmiştir.</div>
+      <div class="osym-q-stem">Bu alanların hangisinde <b>${esc(target.isim)}</b> yer almaktadır?</div>
+    `;
+  }
+
+  // Distractor selection with spatial separation (>= 4.8%)
+  const selected = [target];
+  const candidates = shuffle(distractorPool);
+
+  for (const cand of candidates) {
+    if (selected.length >= optCount) break;
+    const tooClose = selected.some(s => Math.hypot(cand.x - s.x, cand.y - s.y) < 4.8);
+    if (!tooClose) selected.push(cand);
+  }
+
+  // If still need more, loosen distance requirement
+  if (selected.length < optCount) {
+    for (const cand of candidates) {
+      if (selected.length >= optCount) break;
+      if (!selected.some(s => s.id === cand.id)) {
+        selected.push(cand);
+      }
+    }
+  }
+
+  const ROMANS  = ['I', 'II', 'III', 'IV', 'V'];
+  const LETTERS = ['A', 'B', 'C', 'D', 'E'];
+  const shuffledItems = shuffle(selected);
+
+  const options = shuffledItems.map((item, idx) => ({
+    letter: LETTERS[idx],
+    roman: ROMANS[idx],
+    item: item,
+    isCorrect: item.id === target.id
+  }));
+
+  const correctOption = options.find(o => o.isCorrect);
+
+  return {
+    target,
+    options,
+    correctOption,
+    stemHtml,
+    badgeSub,
+    mapImg
+  };
+}
+
+function renderOsymQuestion(target) {
+  const osymData = buildOsymQuestionData(target);
+  S.osymData = osymData;
+  enableMapClick(false);
+  clearPins();
+
+  // 1. Top Panel: Prompt
+  $('top-panel').innerHTML = `
+    <div class="osym-prompt">
+      <div class="osym-badge-row">
+        <span class="osym-tag">🏛️ ÖSYM FORMATI</span>
+        <span class="osym-sub-tag">${osymData.badgeSub}</span>
+      </div>
+      ${osymData.stemHtml}
+    </div>
+  `;
+
+  // 2. Map Pins: Roman numerals with .pin-osym
+  osymData.options.forEach(opt => {
+    addPin(
+      opt.item.x,
+      opt.item.y,
+      opt.roman,
+      '#0f172a',
+      28,
+      true,
+      'pin-osym',
+      () => handleOsymChoice(opt)
+    );
+  });
+
+  // 3. Bottom Panel: Choice buttons
+  const wrap = el('div', 'osym-choices-wrap');
+  wrap.innerHTML = `
+    <div class="osym-choices-hint">👆 Haritadaki numaraya dokunun veya aşağıdaki seçeneği işaretleyin:</div>
+    <div class="osym-choices-row">
+      ${osymData.options.map(opt => `
+        <button class="osym-choice-btn" data-letter="${opt.letter}" data-roman="${opt.roman}" data-id="${opt.item.id}">
+          <span class="osym-opt-letter">${opt.letter})</span>
+          <span class="osym-opt-roman">${opt.roman}</span>
+        </button>
+      `).join('')}
+    </div>
+  `;
+
+  wrap.querySelectorAll('.osym-choice-btn').forEach(btn => {
+    const roman = btn.dataset.roman;
+    const opt = osymData.options.find(o => o.roman === roman);
+    if (opt) {
+      btn.addEventListener('click', () => handleOsymChoice(opt));
+    }
+  });
+
+  $('bottom-panel').innerHTML = '';
+  $('bottom-panel').appendChild(wrap);
+}
+
+function handleOsymChoice(chosenOpt) {
+  if (S.isAnswered || !S.osymData) return;
+  stopQuestionTimer();
+  S.isAnswered = true;
+
+  const osym = S.osymData;
+  const ok = chosenOpt.isCorrect;
+
+  if (ok) {
+    Sound.playCorrect();
+    triggerHaptic(true);
+  } else {
+    Sound.playWrong();
+    triggerHaptic(false);
+  }
+
+  recordAnswer(osym.target, ok);
+
+  // Disable buttons and update button colors
+  document.querySelectorAll('.osym-choice-btn').forEach(btn => {
+    btn.disabled = true;
+    if (btn.dataset.roman === osym.correctOption.roman) {
+      btn.classList.add('correct');
+    } else if (!ok && btn.dataset.roman === chosenOpt.roman) {
+      btn.classList.add('wrong');
+    }
+  });
+
+  // Reveal pins on the map
+  revealOsymPins(chosenOpt, false);
+
+  // Render comprehensive ÖSYM breakdown in bottom panel
+  renderOsymFeedback(ok, chosenOpt, false);
+}
+
+function handleOsymTimeout() {
+  if (S.isAnswered || !S.osymData) return;
+  stopQuestionTimer();
+  S.isAnswered = true;
+
+  Sound.playWrong();
+  triggerHaptic(false);
+  recordAnswer(S.osymData.target, false);
+
+  document.querySelectorAll('.osym-choice-btn').forEach(btn => {
+    btn.disabled = true;
+    if (btn.dataset.roman === S.osymData.correctOption.roman) {
+      btn.classList.add('correct');
+    }
+  });
+
+  revealOsymPins(null, true);
+  renderOsymFeedback(false, null, true);
+}
+
+function revealOsymPins(chosenOpt, isTimeout = false) {
+  if (!S.osymData) return;
+  clearPins();
+
+  S.osymData.options.forEach(opt => {
+    let pinLabel = opt.roman;
+    let extraCls = 'pin-osym';
+    let pinColor = '#334155';
+    let pinSize  = 26;
+    let pulse    = false;
+
+    if (opt.isCorrect) {
+      pinLabel = opt.roman + ' ✓';
+      extraCls = 'pin-osym revealed-correct';
+      pinColor = '#059669';
+      pinSize  = 30;
+      pulse    = true;
+    } else if (chosenOpt && !chosenOpt.isCorrect && opt.roman === chosenOpt.roman) {
+      pinLabel = opt.roman + ' ✗';
+      extraCls = 'pin-osym revealed-wrong';
+      pinColor = '#dc2626';
+      pinSize  = 28;
+    }
+
+    const pinWrap = addPin(
+      opt.item.x,
+      opt.item.y,
+      pinLabel,
+      pinColor,
+      pinSize,
+      pulse,
+      extraCls
+    );
+
+    // Add visual name tag under the pin
+    const tag = el('div', 'pin-osym-label' + (opt.isCorrect ? ' is-target' : ''));
+    tag.textContent = `${opt.roman}: ${opt.item.isim}`;
+    pinWrap.appendChild(tag);
+  });
+}
+
+function renderOsymFeedback(ok, chosenOpt, isTimeout = false) {
+  const osym = S.osymData;
+  const target = osym.target;
+  const correctOpt = osym.correctOption;
+
+  const panel = el('div', 'feedback-panel osym-feedback');
+  panel.innerHTML = `
+    <div class="osym-fb-header">
+      <div class="fb-icon">${ok ? '✅' : '❌'}</div>
+      <div style="flex:1">
+        <div class="fb-result ${ok ? 'correct' : 'wrong'}">
+          ${isTimeout ? '⏰ Süre Doldu!' : (ok ? 'Tebrikler, Doğru Cevap!' : 'Yanlış Cevap!')}
+        </div>
+        <div class="osym-fb-correct-ans">
+          Doğru Seçenek: <b>${correctOpt.letter}) ${correctOpt.roman}</b> — 
+          <span style="color:${CAT_COLOR[target.kategori] || '#38bdf8'};font-weight:700;">${esc(target.isim)}</span> 
+          <span style="color:#94a3b8;font-size:12px;">(${esc(target.kategori)})</span>
+        </div>
+      </div>
+    </div>
+
+    ${target.not ? `
+      <div class="fb-item-note" style="margin:0">
+        📌 <b>ÖSYM Bilgi Notu:</b> ${esc(target.not)}
+      </div>
+    ` : ''}
+
+    <div class="osym-breakdown-card">
+      <div class="osym-breakdown-title">📋 Haritadaki Tüm Numaraların Açıklaması</div>
+      <div class="osym-breakdown-list">
+        ${osym.options.map(opt => `
+          <div class="osym-breakdown-item ${opt.isCorrect ? 'is-correct' : ''}">
+            <span class="breakdown-roman">${opt.roman}:</span>
+            <span class="breakdown-name">${esc(opt.item.isim)}</span>
+            <span class="breakdown-cat">(${esc(opt.item.kategori)})</span>
+            ${opt.isCorrect ? '<span class="breakdown-check">✓ Doğru</span>' : ''}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <button class="fb-continue" id="osym-continue-btn" style="width:100%;margin-top:2px;">Sonraki Soru →</button>
+  `;
+
+  panel.querySelector('#osym-continue-btn').addEventListener('click', () => {
+    resetMapTransform();
+    clearPins();
+    $('top-panel').innerHTML = '';
+    $('bottom-panel').innerHTML = '';
+    S.osymData = null;
+    nextQuestion();
+  });
+
+  $('bottom-panel').innerHTML = '';
+  $('bottom-panel').appendChild(panel);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────
 //  ANSWER CHECKING & STREAKS
 // ─────────────────────────────────────────────────────────────────────────
 function onMapClick(e) {
@@ -871,7 +1447,7 @@ function onMapClick(e) {
     handleExploreMapClick(e);
     return;
   }
-  if (S.screenMode !== 'quiz' || S.isAnswered) return;
+  if ((S.screenMode !== 'quiz' && S.screenMode !== 'blitz') || S.isAnswered) return;
   if (S.currentQType !== 'name-to-loc') return;
 
   const ov = $('map-overlay');
@@ -922,10 +1498,19 @@ function onMapClick(e) {
 
   // Snap to nearest candidate
   if (c1 && c1.dist <= 6.0) {
-    evaluateNameToLocAnswer(c1.item, pt.x, pt.y);
+    if (S.screenMode === 'blitz') {
+      const ok = c1.item.id === S.currentItem.id;
+      handleBlitzAnswer(c1.item, ok);
+    } else {
+      evaluateNameToLocAnswer(c1.item, pt.x, pt.y);
+    }
   } else {
     // Click was too far from any valid point
-    evaluateNameToLocAnswer(null, pt.x, pt.y);
+    if (S.screenMode === 'blitz') {
+      handleBlitzAnswer(null, false);
+    } else {
+      evaluateNameToLocAnswer(null, pt.x, pt.y);
+    }
   }
 }
 
@@ -950,6 +1535,16 @@ function handleChoice(chosen) {
   hideDisambiguationBubble();
   S.isAnswered = true;
   const ok = chosen.id === S.currentItem.id;
+
+  if (S.screenMode === 'blitz') {
+    document.querySelectorAll('.choice-btn').forEach(btn => {
+      btn.disabled = true;
+      if (btn.dataset.id === S.currentItem.id) btn.classList.add('correct');
+      else if (btn.dataset.id === chosen.id && !ok) btn.classList.add('wrong');
+    });
+    handleBlitzAnswer(chosen, ok);
+    return;
+  }
 
   if (ok) { Sound.playCorrect(); } else { Sound.playWrong(); }
   triggerHaptic(ok);
@@ -1087,6 +1682,15 @@ function endSession() {
   if (S.timedMode && total >= 5) unlockBadge('hizli_tur');
   if (pct >= 80 && S.mode === 'mountains') unlockBadge('toroslar');
   if (pct >= 80 && S.mode === 'lakes')     unlockBadge('goller');
+  if (pct >= 80 && S.mode === 'ovalar')    unlockBadge('ovalar');
+  if (pct >= 80 && S.mode === 'platolar')  unlockBadge('platolar');
+  if (pct >= 80 && S.mode === 'akarsular') unlockBadge('akarsu_ustasi');
+  if (pct >= 80 && S.mode === 'gecitler')  unlockBadge('gecit_rehberi');
+  if (S.isDaily && pct >= 60) {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    try { localStorage.setItem(`trk-daily-${todayStr}`, 'true'); } catch(_) {}
+    unlockBadge('gunun_fatihi');
+  }
   if (pct === 100 && total >= 8)           unlockBadge('kusursuz');
 
   const worst = Object.entries(wrongItems)
@@ -1105,13 +1709,866 @@ function endSession() {
   } else {
     wDiv.innerHTML = '<div style="color:#27ae60;text-align:center;padding:12px">🎉 Harika! Tüm sorular doğru!</div>';
   }
+  $('res-title').textContent = S.isDaily ? '📅 Günün Sınavı Tamamlandı!' : '🏁 Tur Sona Erdi';
+  $('res-blitz-banner')?.classList.add('hidden');
   showScreen('screen-results');
 }
 
 function bindResultsEvents() {
-  $('res-again-btn')?.addEventListener('click', () => startQuiz(S.isMistakesMode));
+  $('res-again-btn')?.addEventListener('click', () => {
+    if (S.isBlitz) startBlitzMode();
+    else startQuiz(S.isMistakesMode);
+  });
   $('res-menu-btn')?.addEventListener('click', () => { showScreen('screen-menu'); buildMenu(); });
   $('res-badges-btn')?.addEventListener('click', openBadgesModal);
+  $('res-share-btn')?.addEventListener('click', openShareModal);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  60 SANİYE HARİTA FIRTINASI (BLITZ MODE)
+// ─────────────────────────────────────────────────────────────────────────
+function startBlitzMode() {
+  let pool = getActiveItems();
+  const calibrated = pool.filter(i => i.x !== null && i.y !== null && CAT_TO_IMAGE[i.kategori]);
+  if (calibrated.length === 0) {
+    alert('Bu kategoride henüz kalibre edilmiş soru bulunmuyor!');
+    return;
+  }
+
+  S.isBlitz = true;
+  S.isMistakesMode = false;
+  S.activeItems = calibrated;
+  S.queue = shuffle(calibrated);
+  S.screenMode = 'blitz';
+  S.sessionStats = { correct: 0, wrong: 0, wrongItems: {}, bestStreak: 0 };
+  S.streak = 0;
+  S.blitzScore = 0;
+  S.blitzTimeLeft = 60;
+  S.isAnswered = false;
+  S.calTarget = null;
+  hideDisambiguationBubble();
+
+  showScreen('screen-main');
+  resetMapTransform();
+
+  startBlitzTimer();
+  nextBlitzQuestion();
+}
+
+function startBlitzTimer() {
+  stopBlitzTimer();
+  stopQuestionTimer();
+
+  const bar = $('quiz-timer-bar');
+  if (bar) bar.classList.add('hidden');
+
+  S.blitzTimerId = setInterval(() => {
+    S.blitzTimeLeft -= 0.1;
+
+    // Update blitz timer in header
+    const timerEl = $('blitz-tbar-timer');
+    if (timerEl) {
+      const sec = Math.max(0, Math.ceil(S.blitzTimeLeft));
+      timerEl.innerHTML = `⚡ <b>${sec}</b> sn`;
+      if (sec <= 10) {
+        timerEl.style.background = '#991b1b';
+      } else {
+        timerEl.style.background = '#dc2626';
+      }
+    }
+
+    if (S.blitzTimeLeft <= 0) {
+      stopBlitzTimer();
+      endBlitzSession();
+    }
+  }, 100);
+}
+
+function stopBlitzTimer() {
+  if (S.blitzTimerId) {
+    clearInterval(S.blitzTimerId);
+    S.blitzTimerId = null;
+  }
+}
+
+function renderBlitzHeader() {
+  const sec = Math.max(0, Math.ceil(S.blitzTimeLeft));
+
+  $('top-bar').innerHTML = `
+    <button class="btn-icon" id="blitz-back">←</button>
+    <div class="tbar-blitz-timer" id="blitz-tbar-timer">
+      ⚡ <b>${sec}</b> sn
+    </div>
+    <div class="tbar-blitz-score">
+      🎯 <span id="blitz-tbar-pts">${S.blitzScore}</span>
+    </div>
+    <div class="tbar-streak" id="blitz-tbar-streak">
+      🔥 ${S.streak}
+    </div>
+    <button class="btn-icon" id="btn-sound-toggle" title="Sesi Aç/Kapat">${Sound.enabled ? '🔊' : '🔇'}</button>
+  `;
+
+  $('blitz-back')?.addEventListener('click', () => {
+    if (confirm('Fırtına modundan çıkmak istiyor musunuz?')) {
+      stopBlitzTimer();
+      clearPins(); enableMapClick(false); showScreen('screen-menu'); buildMenu();
+    }
+  });
+  $('btn-sound-toggle')?.addEventListener('click', () => Sound.toggle());
+}
+
+function nextBlitzQuestion() {
+  if (S.blitzTimeLeft <= 0) {
+    endBlitzSession();
+    return;
+  }
+
+  // Refill queue if needed
+  if (S.queue.length === 0) {
+    S.queue = shuffle(S.activeItems);
+  }
+  const item = S.queue.shift();
+  S.currentItem = item;
+  S.currentQType = S.qtype === 'mixed'
+    ? (Math.random() < 0.5 ? 'name-to-loc' : 'loc-to-name') : S.qtype;
+  S.isAnswered = false;
+  S.lastAnswerTime = Date.now();
+
+  switchMapImage(item.kategori);
+  clearPins();
+  enableMapClick(false);
+  $('top-panel').innerHTML = '';
+  $('bottom-panel').innerHTML = '';
+
+  renderBlitzHeader();
+  renderQuestion();
+}
+
+function handleBlitzAnswer(chosenItem, ok) {
+  if (S.isAnswered || S.blitzTimeLeft <= 0) return;
+  S.isAnswered = true;
+  enableMapClick(false);
+
+  const elapsedSec = (Date.now() - S.lastAnswerTime) / 1000;
+
+  if (ok) {
+    S.sessionStats.correct++;
+    S.streak++;
+    if (S.streak > S.sessionStats.bestStreak) S.sessionStats.bestStreak = S.streak;
+
+    // Score calculation: Base 100 + streak bonus + speed bonus
+    let pts = 100 + (S.streak * 25);
+    if (elapsedSec < 2.5) pts += 50;
+
+    S.blitzScore += pts;
+    Sound.playCorrect();
+    triggerHaptic(true);
+
+    showStreakToast(`+${pts} PUAN! 🔥`, S.streak >= 3 ? `${S.streak} Seri Çarpanı!` : 'Hızlı cevap!');
+    if (S.streak === 5 || S.streak === 10) Sound.playStreak();
+
+    // Show green pin
+    clearPins();
+    addPin(S.currentItem.x, S.currentItem.y, '✓', '#22c55e', 22, true);
+
+    // Update header points immediately
+    const ptsEl = $('blitz-tbar-pts');
+    if (ptsEl) ptsEl.textContent = S.blitzScore;
+    const streakEl = $('blitz-tbar-streak');
+    if (streakEl) streakEl.textContent = `🔥 ${S.streak}`;
+
+    // Fast advance
+    setTimeout(() => {
+      if (S.blitzTimeLeft > 0) nextBlitzQuestion();
+    }, 380);
+  } else {
+    S.sessionStats.wrong++;
+    S.streak = 0;
+    // Penalty: -2 seconds
+    S.blitzTimeLeft = Math.max(0, S.blitzTimeLeft - 2);
+
+    Sound.playWrong();
+    triggerHaptic(false);
+    showStreakToast('❌ -2 SANİYE!', 'Dikkat! Yanlış cevap süre kaybı');
+
+    clearPins();
+    if (chosenItem) {
+      addPin(chosenItem.x, chosenItem.y, '✗', '#ef4444', 20, false);
+    }
+    addPin(S.currentItem.x, S.currentItem.y, '✓', '#22c55e', 22, true);
+
+    const streakEl = $('blitz-tbar-streak');
+    if (streakEl) streakEl.textContent = `🔥 0`;
+
+    setTimeout(() => {
+      if (S.blitzTimeLeft > 0) nextBlitzQuestion();
+    }, 600);
+  }
+}
+
+function endBlitzSession() {
+  stopBlitzTimer();
+  S.screenMode = 'results';
+  clearPins();
+  enableMapClick(false);
+
+  // Check achievements
+  unlockBadge('blitz_first');
+  if (S.blitzScore >= 1000) unlockBadge('blitz_1000');
+  if (S.blitzScore >= 2000) unlockBadge('blitz_2000');
+
+  // Check High Score
+  const prevHigh = parseInt(localStorage.getItem(LS_BLITZ_HIGH) || '0', 10);
+  const isNewRecord = S.blitzScore > prevHigh;
+  if (isNewRecord) {
+    S.blitzHighScore = S.blitzScore;
+    localStorage.setItem(LS_BLITZ_HIGH, String(S.blitzScore));
+    Sound.playBadge();
+  }
+
+  // Populate Results Screen for Blitz
+  $('res-title').textContent = '⚡ Harita Fırtınası Tamamlandı!';
+  const bBanner = $('res-blitz-banner');
+  if (bBanner) {
+    bBanner.classList.remove('hidden');
+    $('res-blitz-score').textContent = S.blitzScore.toLocaleString('tr-TR');
+    const recTag = $('res-blitz-record-tag');
+    if (recTag) recTag.classList.toggle('hidden', !isNewRecord);
+  }
+
+  const { correct, wrong } = S.sessionStats;
+  const total = correct + wrong;
+  const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+  $('res-correct').textContent = correct;
+  $('res-wrong').textContent = wrong;
+  $('res-pct').textContent = pct + '%';
+
+  const sBanner = $('res-streak-banner');
+  if (sBanner) {
+    sBanner.innerHTML = `👑 Fırtına Rekorunuz: <b>${S.blitzHighScore} Puan</b> &nbsp;·&nbsp; En Uzun Seri: <b>${S.sessionStats.bestStreak}</b>`;
+  }
+
+  $('res-worst').innerHTML = '';
+  showScreen('screen-results');
+  buildMenu(); // Refresh high score badge on menu
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  SKOR KARTI & SOSYAL MEDYA PAYLAŞIMI (CANVAS GENERATOR)
+// ─────────────────────────────────────────────────────────────────────────
+function openShareModal() {
+  const modal = $('modal-share');
+  if (!modal) return;
+  generateShareCard();
+  modal.classList.remove('hidden');
+}
+
+function bindShareModalEvents() {
+  $('modal-share-close')?.addEventListener('click', () => {
+    $('modal-share')?.classList.add('hidden');
+  });
+  $('btn-native-share')?.addEventListener('click', shareScoreCard);
+  $('btn-download-card')?.addEventListener('click', downloadScoreCard);
+  $('btn-copy-link')?.addEventListener('click', copyAppLink);
+}
+
+function copyAppLink() {
+  const url = 'https://erenuss907.github.io/kpss-harita/';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => {
+      alert('🔗 Uygulama bağlantısı panoya kopyalandı:\n' + url);
+    });
+  } else {
+    prompt('Uygulama linkini kopyalayın:', url);
+  }
+}
+
+function generateShareCard() {
+  const canvas = $('share-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = 1080;
+  const H = 1080;
+  canvas.width = W;
+  canvas.height = H;
+
+  // 1. Background Gradient
+  const bgGrad = ctx.createLinearGradient(0, 0, W, H);
+  bgGrad.addColorStop(0, '#0a1128');
+  bgGrad.addColorStop(0.4, '#101f42');
+  bgGrad.addColorStop(1, '#050a18');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // 2. Decorative circles / glow
+  const glow1 = ctx.createRadialGradient(200, 200, 20, 200, 200, 450);
+  glow1.addColorStop(0, 'rgba(56, 189, 248, 0.12)');
+  glow1.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = glow1;
+  ctx.fillRect(0, 0, W, H);
+
+  const glow2 = ctx.createRadialGradient(880, 850, 20, 880, 850, 450);
+  glow2.addColorStop(0, 'rgba(245, 158, 11, 0.14)');
+  glow2.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = glow2;
+  ctx.fillRect(0, 0, W, H);
+
+  // 3. Card Border
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = '#38bdf8';
+  if (ctx.roundRect) {
+    ctx.beginPath();
+    ctx.roundRect(40, 40, W - 80, H - 80, 36);
+    ctx.stroke();
+  } else {
+    ctx.strokeRect(40, 40, W - 80, H - 80);
+  }
+
+  // Inner gold border accent
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
+  if (ctx.roundRect) {
+    ctx.beginPath();
+    ctx.roundRect(55, 55, W - 110, H - 110, 28);
+    ctx.stroke();
+  }
+
+  // 4. Header Badge
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#f59e0b';
+  ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.fillText('★ KPSS COĞRAFYA HARİTA USTASI ★', W / 2, 125);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '800 44px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.fillText('BAŞARI SERTİFİKASI', W / 2, 185);
+
+  // Category Tag Box
+  const catTitle = S.isDaily
+    ? '📅 GÜNÜN KPSS SINAVI'
+    : (S.isBlitz
+        ? '⚡ 60 SANİYE HARİTA FIRTINASI'
+        : (S.category ? S.category.toUpperCase() : (
+            S.mode === 'mountains' ? 'TÜRKİYE DAĞLARI' :
+            S.mode === 'lakes' ? 'TÜRKİYE GÖLLERİ' :
+            S.mode === 'ovalar' ? 'TÜRKİYE OVALARI' :
+            S.mode === 'platolar' ? 'TÜRKİYE PLATOLARI' :
+            S.mode === 'akarsular' ? 'TÜRKİYE AKARSULARI' :
+            S.mode === 'gecitler' ? 'TÜRKİYE DAĞ GEÇİTLERİ' :
+            'TÜRKİYE COĞRAFYASI'
+          )));
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+  if (ctx.roundRect) {
+    ctx.beginPath();
+    ctx.roundRect(W / 2 - 260, 220, 520, 52, 26);
+    ctx.fill();
+  }
+  ctx.fillStyle = '#38bdf8';
+  ctx.font = '700 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.fillText(catTitle, W / 2, 255);
+
+  // 5. Main Hero Value (Score or Percentage)
+  if (S.isBlitz) {
+    // Blitz Score
+    const scoreGrad = ctx.createLinearGradient(0, 360, 0, 480);
+    scoreGrad.addColorStop(0, '#fef08a');
+    scoreGrad.addColorStop(1, '#f59e0b');
+    ctx.fillStyle = scoreGrad;
+    ctx.font = '900 130px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText(S.blitzScore.toLocaleString('tr-TR'), W / 2, 450);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '800 30px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText('TOPLAM PUAN', W / 2, 505);
+  } else {
+    // Percentage
+    const total = S.sessionStats.correct + S.sessionStats.wrong;
+    const pct = total > 0 ? Math.round((S.sessionStats.correct / total) * 100) : 0;
+    
+    const pctGrad = ctx.createLinearGradient(0, 360, 0, 480);
+    pctGrad.addColorStop(0, '#86efac');
+    pctGrad.addColorStop(1, '#22c55e');
+    ctx.fillStyle = pctGrad;
+    ctx.font = '900 135px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText(`%${pct}`, W / 2, 450);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '800 30px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText(pct >= 85 ? '🌟 HARİKA BAŞARI' : pct >= 60 ? '👍 İYİ İLERLEME' : '🎯 ÇALIŞMAYA DEVAM', W / 2, 505);
+  }
+
+  // 6. Stat Cards (3 Pills)
+  const stats = [
+    { label: 'Doğru', val: `✓ ${S.sessionStats.correct}`, color: '#22c55e' },
+    { label: 'Yanlış', val: `✗ ${S.sessionStats.wrong}`, color: '#ef4444' },
+    { label: 'En Uzun Seri', val: `🔥 ${S.sessionStats.bestStreak || S.streak}`, color: '#f59e0b' }
+  ];
+
+  const cardW = 260;
+  const cardH = 120;
+  const gap = 36;
+  const startX = (W - (cardW * 3 + gap * 2)) / 2;
+  const cardY = 565;
+
+  stats.forEach((st, i) => {
+    const x = startX + i * (cardW + gap);
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.lineWidth = 2;
+    if (ctx.roundRect) {
+      ctx.beginPath();
+      ctx.roundRect(x, cardY, cardW, cardH, 20);
+      ctx.fill();
+      ctx.stroke();
+    } else {
+      ctx.fillRect(x, cardY, cardW, cardH);
+    }
+
+    ctx.fillStyle = st.color;
+    ctx.font = '900 40px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText(st.val, x + cardW / 2, cardY + 54);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '600 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText(st.label, x + cardW / 2, cardY + 95);
+  });
+
+  // 7. Motivational Quote Box
+  ctx.fillStyle = 'rgba(56, 189, 248, 0.08)';
+  if (ctx.roundRect) {
+    ctx.beginPath();
+    ctx.roundRect(140, 725, W - 280, 95, 20);
+    ctx.fill();
+  }
+  ctx.fillStyle = '#f8fafc';
+  ctx.font = 'italic 500 25px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.fillText('« Haritada yerini gördüğün şeyi hafızan asla unutmaz! »', W / 2, 768);
+  ctx.fillStyle = '#38bdf8';
+  ctx.font = '700 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.fillText('KPSS 2026 Coğrafya Cepte 🎯', W / 2, 802);
+
+  // 8. Footer Brand & QR / Link
+  ctx.fillStyle = '#64748b';
+  ctx.font = '600 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.fillText('Sen de Türkiye Haritasını Keşfet & Kendini Sına:', W / 2, 885);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '800 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.fillText('erenuss907.github.io/kpss-harita', W / 2, 930);
+
+  const dateStr = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+  ctx.fillStyle = '#475569';
+  ctx.font = '500 18px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.fillText(`${dateStr} • Türkiye Dağları & Gölleri Ezber Platformu`, W / 2, 985);
+
+  // Show in image element preview
+  const previewImg = $('share-img-preview');
+  if (previewImg) {
+    previewImg.src = canvas.toDataURL('image/png');
+  }
+}
+
+function shareScoreCard() {
+  const canvas = $('share-canvas');
+  if (!canvas) return;
+
+  canvas.toBlob(blob => {
+    if (!blob) return;
+    const file = new File([blob], 'kpss-harita-skor.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({
+        title: 'KPSS Harita Başarı Kartım',
+        text: 'KPSS Türkiye Dağları ve Gölleri harita testim bitti! Sen de dene:',
+        url: 'https://erenuss907.github.io/kpss-harita/',
+        files: [file]
+      }).catch(err => {
+        if (err.name !== 'AbortError') downloadScoreCard();
+      });
+    } else {
+      downloadScoreCard();
+      alert('Görsel telefonunuza/bilgisayarınıza indirildi! WhatsApp veya Instagram hikayenizde kolayca paylaşabilirsiniz.');
+    }
+  }, 'image/png');
+}
+
+function downloadScoreCard() {
+  const canvas = $('share-canvas');
+  if (!canvas) return;
+  const link = document.createElement('a');
+  link.download = `kpss-harita-skor-${Date.now()}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+function startDailyChallenge() {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const alreadyDone = localStorage.getItem(`trk-daily-${todayStr}`);
+  if (alreadyDone && !confirm('Bugünkü Günün KPSS Sınavı görevini zaten tamamladınız! Tekrar çözmek ister misiniz?')) {
+    return;
+  }
+
+  // Deterministic seed based on today's date
+  let seed = 0;
+  for (let i = 0; i < todayStr.length; i++) {
+    seed = (seed * 31 + todayStr.charCodeAt(i)) >>> 0;
+  }
+  const pseudoRand = () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return (seed >>> 0) / 4294967296;
+  };
+
+  const calibrated = ALL_ITEMS.filter(i => i.x !== null && i.y !== null && CAT_TO_IMAGE[i.kategori]);
+  const dags = calibrated.filter(i => i.tip === 'dag');
+  const gols = calibrated.filter(i => i.tip === 'gol');
+  const ovas = calibrated.filter(i => i.tip === 'ova');
+  const plats = calibrated.filter(i => i.tip === 'plato');
+  const akarsus = calibrated.filter(i => i.tip === 'akarsu');
+  const gecits = calibrated.filter(i => i.tip === 'gecit');
+
+  const pickOne = (arr) => arr[Math.floor(pseudoRand() * arr.length)];
+  const dailySet = [
+    pickOne(dags),
+    pickOne(gols),
+    pickOne(ovas),
+    pickOne(plats),
+    pseudoRand() > 0.5 ? pickOne(akarsus) : pickOne(gecits)
+  ].filter(Boolean);
+
+  S.isDaily = true;
+  S.isMistakesMode = false;
+  S.isBlitz = false;
+  S.mode = 'mixed';
+  S.category = null;
+  S.qtype = 'mixed';
+  S.queue = [...dailySet];
+  S.activeItems = dailySet;
+  S.screenMode = 'quiz';
+  S.sessionStats = { correct: 0, wrong: 0, wrongItems: {}, bestStreak: 0 };
+  S.streak = 0;
+  S.isAnswered = false;
+  S.calTarget = null;
+  hideDisambiguationBubble();
+  $('res-blitz-banner')?.classList.add('hidden');
+
+  showScreen('screen-main');
+  resetMapTransform();
+  nextQuestion();
+}
+
+function exportStudyAtlasPDF() {
+  const printWin = window.open('', '_blank');
+  if (!printWin) {
+    alert('Açılır pencere engellendi! Lütfen tarayıcınızın ayarlarından pop-up izni verin.');
+    return;
+  }
+
+  const sections = [
+    {
+      title: '⛰️ TÜRKİYE DAĞLARI',
+      tip: 'dag',
+      cats: ['Kıvrımlı Dağlar', 'Kırıklı Dağlar (Horst-Graben)', 'Volkanik Dağlar']
+    },
+    {
+      title: '💧 TÜRKİYE GÖLLERİ',
+      tip: 'gol',
+      cats: ['Tektonik Göller', 'Karstik Göller', 'Volkanik Göller', 'Buzul (Sirk) Gölleri', 'Heyelan Set Gölleri', 'Volkanik Set Gölleri', 'Alüvyon Set Gölleri', 'Kıyı Set (Lagün) Gölleri']
+    },
+    {
+      title: '🌾 TÜRKİYE OVALARI',
+      tip: 'ova',
+      cats: ['Delta Ovaları', 'Karstik Ovalar (Polye)']
+    },
+    {
+      title: '🏞️ TÜRKİYE PLATOLARI',
+      tip: 'plato',
+      cats: ['Karstik Platolar', 'Volkanik (Lav) Platoları', 'Aşınım (Aşınım Düzlüğü) Platoları', 'Tabaka Düzlüğü (Yatay Duruşlu) Platolar']
+    },
+    {
+      title: '🌊 TÜRKİYE AKARSULARI & HAVZALARI',
+      tip: 'akarsu',
+      cats: ['Karadeniz Akarsuları', 'Akdeniz Akarsuları', 'Ege ve Marmara Akarsuları', 'Basra ve Hazar Akarsuları']
+    },
+    {
+      title: '🚪 TÜRKİYE STRATEJİK DAĞ GEÇİTLERİ',
+      tip: 'gecit',
+      cats: ['Karadeniz Geçitleri', 'Akdeniz Geçitleri']
+    }
+  ];
+
+  let bodyHtml = `
+    <div class="no-print header-bar">
+      <button onclick="window.print()" class="btn-print">🖨️ Yazdır / PDF Olarak Kaydet</button>
+      <button onclick="window.close()" class="btn-close">✕ Kapat</button>
+    </div>
+    <div class="atlas-cover">
+      <h1>🇹🇷 KPSS COĞRAFYA HARİTA & HAFIZA ATLASI</h1>
+      <p class="subtitle">Tüm Yer Şekilleri, Sınav İpuçları ve Şifreli Hafıza Kodlamaları Özet Çalışma Fasikülü</p>
+      <div class="meta-tag">Lisans • Önlisans • Ortaöğretim KPSS Hazırlık Rehberi | Toplam 230 Sınav Noktası</div>
+    </div>
+
+    <div class="mnemonics-section">
+      <h2>💡 KPSS ALTIN HAFIZA ŞİFRELERİ (KODLAMALAR)</h2>
+      <div class="mnemonics-grid">
+  `;
+
+  ALL_KATEGORILER.forEach(cat => {
+    if (cat.kodlama) {
+      bodyHtml += `
+        <div class="mnemonic-card">
+          <div class="m-title" style="border-left: 4px solid ${cat.renk || '#3498db'}">${cat.id}</div>
+          <div class="m-code">${esc(cat.kodlama).replace(/\\n/g, '<br>')}</div>
+        </div>
+      `;
+    }
+  });
+
+  bodyHtml += `
+      </div>
+    </div>
+  `;
+
+  sections.forEach(sec => {
+    bodyHtml += `
+      <div class="sec-divider">
+        <h2>${sec.title}</h2>
+      </div>
+    `;
+
+    sec.cats.forEach(catName => {
+      const items = ALL_ITEMS.filter(i => i.kategori === catName);
+      if (!items.length) return;
+      const catObj = ALL_KATEGORILER.find(k => k.id === catName);
+
+      bodyHtml += `
+        <div class="cat-block">
+          <div class="cat-header" style="background: ${catObj?.renk ? catObj.renk + '20' : '#f0f4f8'}; border-left: 5px solid ${catObj?.renk || '#2c3e50'}">
+            <h3>${catName} <span class="count-badge">(${items.length} Adet)</span></h3>
+            ${catObj?.kodlama ? `<div class="cat-code-hint">🔑 Kodlama: <b>${esc(catObj.kodlama)}</b></div>` : ''}
+          </div>
+          <table class="atlas-table">
+            <thead>
+              <tr>
+                <th style="width:25%">Yer Şekli / İsim</th>
+                <th style="width:20%">Kategori</th>
+                <th style="width:55%">KPSS'de Çıkabilecek Önemli Notlar & Özellikler</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      items.forEach(item => {
+        bodyHtml += `
+          <tr>
+            <td class="item-name"><b>${esc(item.isim)}</b></td>
+            <td class="item-cat">${esc(item.kategori)}</td>
+            <td class="item-notes">${esc(item.not || '-')}</td>
+          </tr>
+        `;
+      });
+
+      bodyHtml += `
+            </tbody>
+          </table>
+        </div>
+      `;
+    });
+  });
+
+  const fullHtml = `<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>KPSS Coğrafya Harita ve Hafıza Atlası</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #2c3e50;
+      background: #fff;
+      line-height: 1.5;
+      padding: 24px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .header-bar {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .btn-print {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .btn-close {
+      background: #64748b;
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .atlas-cover {
+      text-align: center;
+      padding: 24px 16px;
+      background: #f8fafc;
+      border-radius: 12px;
+      border: 2px solid #cbd5e1;
+      margin-bottom: 24px;
+    }
+    .atlas-cover h1 {
+      margin: 0 0 8px 0;
+      font-size: 24px;
+      color: #0f172a;
+    }
+    .subtitle {
+      margin: 0 0 12px 0;
+      font-size: 15px;
+      color: #475569;
+    }
+    .meta-tag {
+      display: inline-block;
+      background: #e2e8f0;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+    .mnemonics-section {
+      margin-bottom: 30px;
+      page-break-inside: avoid;
+    }
+    .mnemonics-section h2 {
+      font-size: 18px;
+      border-bottom: 2px solid #3b82f6;
+      padding-bottom: 6px;
+      color: #1e3a8a;
+    }
+    .mnemonics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .mnemonic-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 12px;
+      break-inside: avoid;
+    }
+    .m-title {
+      font-weight: 700;
+      font-size: 13px;
+      padding-left: 6px;
+      margin-bottom: 4px;
+      color: #1e293b;
+    }
+    .m-code {
+      font-size: 12px;
+      color: #334155;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      line-height: 1.4;
+    }
+    .sec-divider h2 {
+      font-size: 19px;
+      background: #0f172a;
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 6px;
+      margin: 28px 0 14px 0;
+      page-break-after: avoid;
+    }
+    .cat-block {
+      margin-bottom: 22px;
+      page-break-inside: avoid;
+    }
+    .cat-header {
+      padding: 8px 12px;
+      border-radius: 6px 6px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .cat-header h3 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .count-badge {
+      font-size: 12px;
+      color: #64748b;
+      font-weight: normal;
+    }
+    .cat-code-hint {
+      font-size: 12px;
+      color: #0f172a;
+    }
+    .atlas-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      border: 1px solid #cbd5e1;
+    }
+    .atlas-table th {
+      background: #f1f5f9;
+      color: #334155;
+      text-align: left;
+      padding: 6px 10px;
+      border: 1px solid #cbd5e1;
+      font-weight: 700;
+    }
+    .atlas-table td {
+      padding: 6px 10px;
+      border: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+    .atlas-table tr:nth-child(even) {
+      background: #f8fafc;
+    }
+    .item-name {
+      color: #0f172a;
+    }
+    .item-cat {
+      color: #475569;
+    }
+    .item-notes {
+      color: #1e293b;
+    }
+    @media print {
+      body { padding: 0; max-width: 100%; font-size: 11px; }
+      .no-print { display: none !important; }
+      .sec-divider h2 { background: #333 !important; color: #fff !important; }
+      .atlas-table { font-size: 10px; }
+      .atlas-table td, .atlas-table th { padding: 4px 6px; }
+      .cat-block { page-break-inside: avoid; }
+      @page { margin: 12mm; }
+    }
+  </style>
+</head>
+<body>
+  ${bodyHtml}
+</body>
+</html>`;
+
+  printWin.document.open();
+  printWin.document.write(fullHtml);
+  printWin.document.close();
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1127,6 +2584,10 @@ function enterExploreMode(catId = null) {
   if (!catId) {
     if (S.category) catId = S.category;
     else if (S.mode === 'mountains') catId = 'Kıvrımlı Dağlar';
+    else if (S.mode === 'ovalar') catId = 'Delta Ovaları';
+    else if (S.mode === 'platolar') catId = 'Karstik Platolar';
+    else if (S.mode === 'akarsular') catId = 'Karadeniz Akarsuları';
+    else if (S.mode === 'gecitler') catId = 'Karadeniz Geçitleri';
     else catId = 'Tektonik Göller';
   }
   S.exploreCat = catId;
@@ -1392,15 +2853,24 @@ function shuffle(arr) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  BİLGİ KARTLARI (FLASHCARDS) MODU  (SADECE GÖLLER)
+//  BİLGİ KARTLARI (FLASHCARDS) MODU
 // ═══════════════════════════════════════════════════════════════════════════
 function getActiveFacts() {
   if (S.category) {
-    const cat = ALL_KATEGORILER.find(k => k.id === S.category && k.tip === 'gol');
+    const cat = ALL_KATEGORILER.find(k => k.id === S.category);
     return (cat && cat.facts) ? cat.facts.map(f => ({ ...f, kategori: cat.id })) : [];
   }
   const allFacts = [];
-  ALL_KATEGORILER.filter(k => k.tip === 'gol' && k.facts && k.facts.length > 0).forEach(k => {
+  const targetCats = ALL_KATEGORILER.filter(k => {
+    if (S.mode === 'mixed') return true;
+    if (S.mode === 'mountains') return k.tip === 'dag';
+    if (S.mode === 'ovalar') return k.tip === 'ova';
+    if (S.mode === 'platolar') return k.tip === 'plato';
+    if (S.mode === 'akarsular') return k.tip === 'akarsu';
+    if (S.mode === 'gecitler') return k.tip === 'gecit';
+    return k.tip === 'gol';
+  });
+  targetCats.filter(k => k.facts && k.facts.length > 0).forEach(k => {
     k.facts.forEach(f => allFacts.push({ ...f, kategori: k.id }));
   });
   return allFacts;
@@ -1409,10 +2879,16 @@ function getActiveFacts() {
 function openFlashcardModal() {
   const facts = getActiveFacts();
   if (facts.length === 0) {
-    alert('Bu göl kategorisinde henüz soru-cevap eklenmemiş.');
+    alert('Bu kategoride henüz soru-cevap eklenmemiş.');
     return;
   }
-  const title = S.category || 'Tüm Göller';
+  const defaultTitle = S.mode === 'mountains' ? 'Tüm Dağlar' :
+                       S.mode === 'lakes' ? 'Tüm Göller' :
+                       S.mode === 'ovalar' ? 'Tüm Ovalar' :
+                       S.mode === 'platolar' ? 'Tüm Platolar' :
+                       S.mode === 'akarsular' ? 'Tüm Akarsular' :
+                       S.mode === 'gecitler' ? 'Tüm Dağ Geçitleri' : 'Tüm Konular';
+  const title = S.category || defaultTitle;
   $('modal-fc-cat-name').textContent = `${title} (${facts.length} Bilgi Kartı)`;
   $('modal-fc-mode').classList.remove('hidden');
 }

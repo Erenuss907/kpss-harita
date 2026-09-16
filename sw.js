@@ -1,4 +1,4 @@
-const CACHE_NAME = 'turkiye-ezber-v4';
+const CACHE_NAME = 'turkiye-ezber-v11';
 const ASSETS = [
   './',
   './index.html',
