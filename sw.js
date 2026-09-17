@@ -1,4 +1,4 @@
-const CACHE_NAME = 'turkiye-ezber-v11';
+const CACHE_NAME = 'turkiye-ezber-v13';
 const ASSETS = [
   './',
   './index.html',
@@ -8,15 +8,7 @@ const ASSETS = [
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
-  './images/daglar.jpg',
-  './images/tektonik-goller.jpg',
-  './images/volkanik-goller.jpg',
-  './images/volkanik-set-goller.jpg',
-  './images/karstik-goller.jpg',
-  './images/buzul-goller.jpg',
-  './images/aluvyon-set-goller.jpg',
-  './images/heyelan-set-goller.jpg',
-  './images/kiyi-set-goller.jpg'
+  './images/turkiye-fiziki-il.jpg'
 ];
 
 self.addEventListener('install', (e) => {
