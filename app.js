@@ -3085,8 +3085,13 @@ const TZ = {
 
   // ── Start / Init ──────────────────────────────────────────────────
   start() {
+    const src = window.TURIZM_SORULAR;
+    if (!src || src.length === 0) {
+      alert('Turizm soru bankası yüklenemedi. Sayfayı yenileyin veya internet bağlantısını kontrol edin.');
+      return;
+    }
     // Fisher-Yates shuffle
-    this.pool = [...(window.TURIZM_SORULAR || [])];
+    this.pool = [...src];
     for (let i = this.pool.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [this.pool[i], this.pool[j]] = [this.pool[j], this.pool[i]];
@@ -3104,6 +3109,8 @@ const TZ = {
   render() {
     const q   = this.pool[this.idx];
     const tot = this.pool.length;
+
+    if (!q) return; // guard against undefined
 
     // header
     $('tz-q-num').textContent   = this.idx + 1;
