@@ -1,10 +1,11 @@
-const CACHE_NAME = 'turkiye-ezber-v13';
+const CACHE_NAME = 'turkiye-ezber-v14';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
   './data.js',
+  './turizm_data.js',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',

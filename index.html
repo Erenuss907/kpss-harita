@@ -29,11 +29,26 @@
           </div>
         </div>
         <div class="menu-top-tools">
-          <button id="menu-daily-btn" class="tool-icon-btn" title="Günün KPSS Sınavı (5 Soru)">📅</button>
-          <button id="menu-pdf-btn" class="tool-icon-btn" title="KPSS Harita Notu &amp; Atlas İndir (PDF)">📑</button>
-          <button id="menu-sound-btn" class="tool-icon-btn" title="Ses Aç/Kapat">🔊</button>
-          <button id="menu-badges-btn" class="tool-icon-btn" title="Başarılar &amp; Rozetler">🏆</button>
-          <button id="menu-mnemonics-btn" class="tool-icon-btn" title="Hafıza Şifreleri">💡</button>
+          <button id="menu-daily-btn" class="tool-btn-item" title="Günün KPSS Sınavı (5 Soru)">
+            <div class="tool-icon-btn"><span class="tool-btn-icon">📅</span></div>
+            <span class="tool-btn-label">Günün Sınavı</span>
+          </button>
+          <button id="menu-pdf-btn" class="tool-btn-item" title="KPSS Harita Notu &amp; Atlas İndir (PDF)">
+            <div class="tool-icon-btn"><span class="tool-btn-icon">📑</span></div>
+            <span class="tool-btn-label">PDF Atlas</span>
+          </button>
+          <button id="menu-sound-btn" class="tool-btn-item" title="Ses Aç/Kapat">
+            <div class="tool-icon-btn"><span class="tool-btn-icon">🔊</span></div>
+            <span class="tool-btn-label">Ses</span>
+          </button>
+          <button id="menu-badges-btn" class="tool-btn-item" title="Başarılar &amp; Rozetler">
+            <div class="tool-icon-btn"><span class="tool-btn-icon">🏆</span></div>
+            <span class="tool-btn-label">Rozetler</span>
+          </button>
+          <button id="menu-mnemonics-btn" class="tool-btn-item" title="Hafıza Şifreleri">
+            <div class="tool-icon-btn"><span class="tool-btn-icon">💡</span></div>
+            <span class="tool-btn-label">Şifreler</span>
+          </button>
         </div>
       </div>
       
@@ -114,6 +129,13 @@
             <span class="action-card-text">
               <strong class="action-card-title">Haritayı İncele</strong>
               <small class="action-card-sub">Serbest Keşif Modu</small>
+            </span>
+          </button>
+          <button id="turizm-btn" class="action-card-btn btn-action-turizm">
+            <span class="action-card-icon">🏛️</span>
+            <span class="action-card-text">
+              <strong class="action-card-title">Turizm Testi</strong>
+              <small class="action-card-sub">4 Şıklı KPSS Soruları</small>
             </span>
           </button>
         </div>
@@ -357,7 +379,65 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════
+     TURİZM QUIZ SCREEN
+════════════════════════════════════════════ -->
+<div id="screen-turizm" class="screen">
+  <div class="tz-container">
+
+    <!-- Top bar -->
+    <div class="tz-topbar">
+      <button id="tz-back-btn" class="tz-back-btn">← Menü</button>
+      <div class="tz-progress-text">Soru <span id="tz-q-num">1</span> / <span id="tz-q-total">60</span></div>
+      <div class="tz-score-box">
+        <span class="tz-score-correct" id="tz-score-correct">✓ 0</span>
+        <span class="tz-score-wrong"   id="tz-score-wrong">✗ 0</span>
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="tz-progress-bar-wrap">
+      <div class="tz-progress-bar-fill" id="tz-progress-fill" style="width:0%"></div>
+    </div>
+
+    <!-- Question card -->
+    <div class="tz-question-card" id="tz-question-card">
+      <div class="tz-question-text" id="tz-question-text"></div>
+    </div>
+
+    <!-- Options grid -->
+    <div class="tz-options-grid" id="tz-options-grid">
+      <button class="tz-option-btn" data-idx="0" id="tz-opt-0"></button>
+      <button class="tz-option-btn" data-idx="1" id="tz-opt-1"></button>
+      <button class="tz-option-btn" data-idx="2" id="tz-opt-2"></button>
+      <button class="tz-option-btn" data-idx="3" id="tz-opt-3"></button>
+    </div>
+
+    <!-- Feedback panel -->
+    <div class="tz-feedback hidden" id="tz-feedback"></div>
+
+    <!-- Next button -->
+    <button class="tz-next-btn hidden" id="tz-next-btn">Sonraki Soru →</button>
+
+    <!-- Result screen (overlaid when done) -->
+    <div class="tz-result hidden" id="tz-result">
+      <div class="tz-result-icon" id="tz-result-icon">🏆</div>
+      <h2 class="tz-result-title">Test Bitti!</h2>
+      <div class="tz-result-score" id="tz-result-score"></div>
+      <div class="tz-result-bar-wrap">
+        <div class="tz-result-bar-fill" id="tz-result-bar"></div>
+      </div>
+      <div class="tz-result-actions">
+        <button id="tz-restart-btn" class="tz-restart-btn">↺ Tekrar Başla</button>
+        <button id="tz-menu-btn"    class="tz-menu-btn">☰ Menü</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <script src="data.js"></script>
+<script src="turizm_data.js"></script>
 <script src="app.js"></script>
 <script>
   if ('serviceWorker' in navigator) {

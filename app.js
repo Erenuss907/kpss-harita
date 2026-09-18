@@ -160,8 +160,8 @@ const Sound = {
 
 function updateSoundUI() {
   const icon = Sound.enabled ? '🔊' : '🔇';
-  const menuBtn = $('menu-sound-btn');
-  if (menuBtn) menuBtn.textContent = icon;
+  const soundIcon = document.querySelector('#menu-sound-btn .tool-btn-icon') || $('menu-sound-btn');
+  if (soundIcon) soundIcon.textContent = icon;
   const quizBtn = $('btn-sound-toggle');
   if (quizBtn) quizBtn.textContent = icon;
 }
@@ -335,8 +335,10 @@ function switchMapImage(kategori) {
   const stage  = $('map-stage');
 
   if (src) {
-    img.onload = () => resizeMapStage();
-    img.src = src;
+    if (!img.src.endsWith(src)) {
+      img.onload = () => resizeMapStage();
+      img.src = src;
+    }
     img.classList.remove('hidden');
     stage.classList.remove('hidden');
     noImg.classList.add('hidden');
@@ -3070,3 +3072,173 @@ function endFlashcards() {
 
 $('fc-again-all-btn')?.addEventListener('click', () => startFlashcards(S.fcMode));
 $('fc-menu-btn')?.addEventListener('click', () => { showScreen('screen-menu'); buildMenu(); });
+
+// ════════════════════════════════════════════════════════════════════
+// TURİZM QUIZ  (turizm_data.js required)
+// ════════════════════════════════════════════════════════════════════
+const TZ = {
+  pool:      [],   // shuffled question list
+  idx:       0,    // current question index
+  correct:   0,
+  wrong:     0,
+  answered:  false,
+
+  // ── Start / Init ──────────────────────────────────────────────────
+  start() {
+    // Fisher-Yates shuffle
+    this.pool = [...(window.TURIZM_SORULAR || [])];
+    for (let i = this.pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [this.pool[i], this.pool[j]] = [this.pool[j], this.pool[i]];
+    }
+    this.idx      = 0;
+    this.correct  = 0;
+    this.wrong    = 0;
+    this.answered = false;
+
+    showScreen('screen-turizm');
+    this.render();
+  },
+
+  // ── Render current question ────────────────────────────────────────
+  render() {
+    const q   = this.pool[this.idx];
+    const tot = this.pool.length;
+
+    // header
+    $('tz-q-num').textContent   = this.idx + 1;
+    $('tz-q-total').textContent = tot;
+    $('tz-score-correct').textContent = '✓ ' + this.correct;
+    $('tz-score-wrong').textContent   = '✗ ' + this.wrong;
+
+    // progress bar
+    $('tz-progress-fill').style.width = (this.idx / tot * 100) + '%';
+
+    // question text
+    $('tz-question-text').textContent = q.s;
+
+    // options
+    for (let i = 0; i < 4; i++) {
+      const btn = $('tz-opt-' + i);
+      btn.textContent = q.o[i];
+      btn.className   = 'tz-option-btn';
+      btn.disabled    = false;
+    }
+
+    // hide feedback + next
+    const fb = $('tz-feedback');
+    fb.classList.add('hidden');
+    fb.className = 'tz-feedback hidden';
+    $('tz-next-btn').classList.add('hidden');
+    $('tz-result').classList.add('hidden');
+
+    this.answered = false;
+  },
+
+  // ── Handle answer ─────────────────────────────────────────────────
+  answer(chosenIdx) {
+    if (this.answered) return;
+    this.answered = true;
+
+    const q = this.pool[this.idx];
+    const isCorrect = (chosenIdx === q.d);
+
+    if (isCorrect) this.correct++;
+    else           this.wrong++;
+
+    // Colour buttons
+    for (let i = 0; i < 4; i++) {
+      const btn = $('tz-opt-' + i);
+      btn.disabled = true;
+      if (i === q.d)       btn.classList.add('correct');
+      if (i === chosenIdx && !isCorrect) btn.classList.add('wrong');
+    }
+
+    // Feedback message
+    const fb = $('tz-feedback');
+    fb.classList.remove('hidden');
+    if (isCorrect) {
+      fb.className = 'tz-feedback is-correct';
+      fb.innerHTML = '✅ Doğru! ' + q.a;
+    } else {
+      fb.className = 'tz-feedback is-wrong';
+      fb.innerHTML = '❌ Yanlış — Doğru cevap: <strong>' + q.o[q.d] + '</strong><br><small>' + q.a + '</small>';
+    }
+
+    // Show next button
+    const nextBtn = $('tz-next-btn');
+    nextBtn.classList.remove('hidden');
+
+    // If last question, change button label
+    if (this.idx + 1 >= this.pool.length) {
+      nextBtn.textContent = 'Sonuçları Gör →';
+    } else {
+      nextBtn.textContent = 'Sonraki Soru →';
+    }
+  },
+
+  // ── Advance to next question ──────────────────────────────────────
+  next() {
+    this.idx++;
+    if (this.idx >= this.pool.length) {
+      this.showResult();
+    } else {
+      this.render();
+    }
+  },
+
+  // ── Final result ──────────────────────────────────────────────────
+  showResult() {
+    const tot = this.pool.length;
+    const pct = Math.round(this.correct / tot * 100);
+
+    // Hide quiz elements
+    $('tz-question-card').style.display = 'none';
+    $('tz-options-grid').style.display  = 'none';
+    $('tz-feedback').classList.add('hidden');
+    $('tz-next-btn').classList.add('hidden');
+
+    // Update progress bar to 100%
+    $('tz-progress-fill').style.width = '100%';
+    $('tz-q-num').textContent = tot;
+
+    // Emoji based on score
+    let icon = pct >= 80 ? '🏆' : pct >= 60 ? '🥈' : pct >= 40 ? '🥉' : '📚';
+    $('tz-result-icon').textContent    = icon;
+    $('tz-result-score').textContent   = this.correct + ' / ' + tot + '  (' + pct + '%)';
+    $('tz-result-bar').style.width     = pct + '%';
+
+    const res = $('tz-result');
+    res.classList.remove('hidden');
+
+    // Restore display for restart
+    $('tz-restart-btn').onclick = () => {
+      $('tz-question-card').style.display = '';
+      $('tz-options-grid').style.display  = '';
+      this.start();
+    };
+    $('tz-menu-btn').onclick = () => {
+      $('tz-question-card').style.display = '';
+      $('tz-options-grid').style.display  = '';
+      showScreen('screen-menu');
+      buildMenu();
+    };
+  }
+};
+
+// ── Wire buttons ──────────────────────────────────────────────────────────────
+$('turizm-btn')?.addEventListener('click', () => TZ.start());
+
+$('tz-back-btn')?.addEventListener('click', () => {
+  showScreen('screen-menu');
+  buildMenu();
+});
+
+$('tz-next-btn')?.addEventListener('click', () => TZ.next());
+
+// Option buttons (event delegation)
+$('tz-options-grid')?.addEventListener('click', (e) => {
+  const btn = e.target.closest('.tz-option-btn');
+  if (!btn || btn.disabled) return;
+  TZ.answer(parseInt(btn.dataset.idx, 10));
+});
