@@ -3085,9 +3085,9 @@ const TZ = {
 
   // ── Start / Init ──────────────────────────────────────────────────
   start() {
-    const src = window.TURIZM_SORULAR;
+    const src = (typeof TURIZM_SORULAR !== 'undefined') ? TURIZM_SORULAR : null;
     if (!src || src.length === 0) {
-      alert('Turizm soru bankası yüklenemedi. Sayfayı yenileyin veya internet bağlantısını kontrol edin.');
+      alert('Turizm soru bankası yüklenemedi. Sayfayı yenileyin.');
       return;
     }
     // Fisher-Yates shuffle
